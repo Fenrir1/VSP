@@ -3017,28 +3017,32 @@ function SaveChange() {
 <% if T=7 then %>
 		<script type="text/javascript">
 		    var jsParam  = '<% =Request("Param") %>';
+			var daysBefore = 0; //дата отчета относительно текущей даты. Максимум на 14 дней ранее.
+			var daysBeforeLimit = -14;
 			var chartE;
 			
 		function ChangeDate(ofs) {
-			jsDate=jsDate+ofs;
-			if (jsDate>0) jsDate=0;
+			daysBefore=daysBefore+ofs;
+			if (daysBefore>0) daysBefore=0;
+			if (daysBefore<daysBeforeLimit) daysBefore=daysBeforeLimit;
 			if (ofs != 0) {
-				ChGraph(jsBC, jsBN, jsDate)
+				if (jsParam!='') {
+			        ChGraph(jsParam, daysBefore);
+			    } else {
+			        ChGraph('<%=activ_chart %>', daysBefore);
+			    }
 			}
 
 			var d = new Date();
-			d.setDate(d.getDate()+jsDate);
+			d.setDate(d.getDate()+daysBefore);
 			dd=((String(d.getDate()).length == 1) ? "0" + d.getDate() : d.getDate());
 			mm=d.getMonth()+1;
 			mm=((String(mm).length == 1) ? "0" + mm : mm);
 			var t = dd+"."+mm +"."+d.getFullYear();
-			var t2 = d.getFullYear()+"-"+mm+"-"+dd+" "+jsTime;
-			$('#idTable1').html='';
-			ChTable(t2);
 			$('#idDate').html(t);
 		};
 
-		function ChGraph(param) {
+		function ChGraph(param, daysOfset) {
 			ds_taget = 'ChannelISS';
 			if (param.substring(0,3)=='ISS') {
 				ds_taget = 'ChannelISS';
@@ -3046,7 +3050,7 @@ function SaveChange() {
 				ds_taget = 'ChannelACQ';
 			}
 				
-			jQuery.get('dataset.asp', { ds: ds_taget, prm: 'Graph', prm2: param }, function(res) {
+			jQuery.get('dataset.asp', { ds: ds_taget, prm: 'Graph', prm2: param, DBefore: daysOfset }, function(res) {
 				dts = res.split('~');
 				options.series[0].data.length=0;
 				options.series[1].data.length=0;
@@ -3919,7 +3923,15 @@ if T=7 then
 <table border="0" cellspacing="2" cellpadding="0" style="border: none;">
 <tr>
 <td style="border: none;" >&nbsp;</td>
-<td style="border: none; font-size: 10pt; font-weight: 700; text-align: center;" nowrap><div style="float: left;">Состояние на &nbsp;</div><div id="idDate" style="float: left;"><% =left(DT_FILE, 10) %></div><div id="idTime" style="float: left;">&nbsp;<% =right(DT_FILE, 8) %></div></td>
+
+<td style="border: none; font-size: 10pt; font-weight: 700; text-align: center;" nowrap>
+	<div style="float: left;" onclick="ChangeDate(-1)">&laquo;&nbsp;</div>
+	<div style="float: left;">Состояние на &nbsp;</div>
+	<div id="idDate" style="float: left;"><% =DT_FILE %></div>
+	<!--<div id="idDate" style="float: left;"><% =left(DT_FILE, 10) %></div>
+	<div id="idTime" style="float: left;">&nbsp;<% =right(DT_FILE, 8) %></div>-->
+	<div style="float: left;" onclick="ChangeDate(1)">&nbsp;&raquo;</div>
+</td>
 <td style="border: none;">&nbsp;</td>
 </tr>
 </table>

@@ -240,13 +240,13 @@ if not Rs.Eof then
 		  mc=mc or 1 
 		end if
 	    if D>=1.0 then
-		  bg="background-color: "&clError&"; color: #000; "
+		  bg="background-color: "&clError&"; color: #ffffff; "
 		  mc=mc or 2 
 		end if
 	  end if
 	else 'обработка исключения деления на 0
 	  if Qu>0 then 
-	    bg="background-color: "&clError&"; color: #000; "
+	    bg="background-color: "&clError&"; color: #ffffff; "
 	    mc=mc or 2
 	  end if
 	end if
@@ -291,8 +291,8 @@ if MaxState=1 then Color6=clWarning end if
 if MaxState=2 then Color6=clError end if
 Rs.Close
 
-'SQL_="SELECT [DT], [TagID], [Value], CASE [TagID] WHEN 'AGENT' THEN 5.5 WHEN 'CLOSE' THEN 4.5 WHEN 'FINACLE' THEN 3.5 WHEN 'IBSO' THEN 2.5 WHEN 'OTHER' THEN 1.5 WHEN 'WATCH' THEN 0.5 ELSE 0 END AS Y FROM Tags_History WHERE (DT > GETDATE()-1.0/6) AND (TagID not like 'Main%') AND (TagID not like '5%') ORDER BY TagID, DT"
-SQL_="SELECT dateAdd(ss,-1*DATEPART(ss, DT),dateAdd(ms,-1*DATEPART(ms, DT),dateAdd(month,-1,DT))) AS DT , [TagID], [Value], CASE [TagID] WHEN 'AGENT' THEN 5.5 WHEN 'CLOSE' THEN 4.5 WHEN 'FINACLE' THEN 3.5 WHEN 'IBSO' THEN 2.5 WHEN 'OTHER' THEN 1.5 WHEN 'WATCH' THEN 0.5 ELSE 0 END AS Y FROM Tags_History WHERE (DT > GETDATE()-1.0/6) AND (TagID not like 'Main%') AND (TagID not like '5%') ORDER BY TagID, DT"
+'SQL_="SELECT [DT], [TagID], [Value], CASE [TagID] WHEN 'AGENT' THEN 5.5 WHEN 'CLOSE' THEN 4.5 WHEN 'IR ACCEPT' THEN 3.5 WHEN 'IBSO' THEN 2.5 WHEN 'OTHER' THEN 1.5 WHEN 'WATCH' THEN 0.5 ELSE 0 END AS Y FROM Tags_History WHERE (DT > GETDATE()-1.0/6) AND (TagID not like 'Main%') AND (TagID not like '5%') ORDER BY TagID, DT"
+SQL_="SELECT dateAdd(ss,-1*DATEPART(ss, DT),dateAdd(ms,-1*DATEPART(ms, DT),dateAdd(month,-1,DT))) AS DT , [TagID], [Value], CASE [TagID] WHEN 'AGENT' THEN 5.5 WHEN 'CLOSE' THEN 4.5 WHEN 'IBSO' THEN 3.5 WHEN 'IR ACCEPT' THEN 2.5 WHEN 'OTHER' THEN 1.5 WHEN 'WATCH' THEN 0.5 ELSE 0 END AS Y FROM Tags_History WHERE (DT > GETDATE()-1.0/6) AND (TagID not like 'Main%') AND (TagID not like '5%') ORDER BY TagID, DT"
 Rs.Open SQL_, Conn
 LastID=""
 dim series(6), CID(6)
@@ -301,8 +301,8 @@ for i=0 to 5
 next
 CID(5)="AGENT"
 CID(4)="CLOSE"
-CID(3)="FINACLE"
-CID(2)="IBSO"
+CID(2)="IR ACCEPT"
+CID(3)="DELAY FILES"
 CID(1)="OTHER"
 CID(0)="WATCH"
 i=-1
@@ -347,6 +347,7 @@ Rs.Close
 <html>
 <head>
 		<meta http-equiv="Content-Type" content="text/html; charset=windows-1251">
+		<meta http-equiv="X-UA-Compatible" content="ie=edge">
 		<meta content="60; url=http://ufa-qos01ow/vsp/main2.asp" http-equiv=refresh>
 		<!-- 1. Add these JavaScript inclusions in the head of your page -->
 		<script type="text/javascript" src="js/jquery.min.js"></script>

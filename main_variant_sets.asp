@@ -56,6 +56,7 @@ set Rs=Server.CreateObject("ADODB.Recordset")
 <html>
 <head>
 		<meta http-equiv="Content-Type" content="text/html; charset=windows-1251">
+        <meta http-equiv="X-UA-Compatible" content="ie=edge">
 		<!-- 1. Add these JavaScript inclusions in the head of your page -->
 		<title>Редактор экранов</title>
     	<script src="js\jquery-3.2.1.min.js"></script>

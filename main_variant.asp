@@ -587,7 +587,7 @@ end if
 	sqlstr = sqlstr&" 		   when [ErrorLevel] = 3 then 'status-red' "
 	sqlstr = sqlstr&" 	  end "
     sqlstr = sqlstr&"  end status_color  from Messages_Type"
-    sqlstr = sqlstr&" union all select 'OperationPerMin', cast(SUM(OPERATION)/5 as nvarchar(15)) from Log_VO where [TIME]=(select top 1 [TIME] from Log_VO order by [TIME] desc)"
+    sqlstr = sqlstr&" union all select 'OperationPerMin', cast(SUM(OPERATION)/10 as nvarchar(15)) from Log_VO where [TIME]=(select top 1 [TIME] from Log_VO order by [TIME] desc)"
 
     Rs.Open sqlstr, Conn
     If not Rs.EOF then

@@ -192,7 +192,7 @@ function getIndicatorStatus()
 end function
 
 function getOperationPerMin() 
-    sqlstr = "select SUM(OPERATION) OperationPerMin from Log_VO where [TIME]=(select top 1 [TIME] from Log_VO order by [TIME] desc)"
+    sqlstr = "select SUM(OPERATION)/10 OperationPerMin from Log_VO where [TIME]=(select top 1 [TIME] from Log_VO order by [TIME] desc)"
     Rs.Open sqlstr, Conn
     If not Rs.EOF then
         OperationPerMin = Rs.Fields("OperationPerMin")
@@ -243,6 +243,7 @@ end if
 <html>
 <head>
 		<meta http-equiv="Content-Type" content="text/html; charset=windows-1251">
+        <meta http-equiv="X-UA-Compatible" content="ie=edge">
 		<!-- <meta http-equiv='refresh' content='60; url=http://ufa-qos01ow/vsp/main1.asp'> -->
 		<!-- 1. Add these JavaScript inclusions in the head of your page -->
 		<title>Редактор экранов</title>
@@ -327,12 +328,12 @@ end if
         
         .speed-indicator {
             /* radius = R */
-            width: 160px;  /* 2R */
-            height: 80px;
+            width: 200px;  /* 2R */
+            height: 100px;
             background-image:    url(img/speed-ticks.png);
             background-size:     cover;                 
             background-repeat:   no-repeat;
-            font-size: 10pt;
+            font-size: 12pt;
             color: #FFFFFF;
             position: relative;
             cursor: pointer;
@@ -345,28 +346,28 @@ end if
         }
         .speed-indicator .tick-label-1 {
             position: absolute;
-            left: 15px;
-            bottom: 25px;
+            left: 20px;
+            bottom: 30px;
         }
         .speed-indicator .tick-label-2 {
             position: absolute;
-            left: 35px;
-            bottom: 50px;
+            left: 45px;
+            bottom: 60px;
         }
         .speed-indicator .tick-label-3 {
             position: absolute;
-            left: 70px;
-            bottom: 60px;
+            left: 85px;
+            bottom: 70px;
         }
         .speed-indicator .tick-label-4 {
             position: absolute;
-            right: 35px;
-            bottom: 50px;
+            right: 45px;
+            bottom: 60px;
         }
         .speed-indicator .tick-label-5 {
             position: absolute;
-            right: 15px;
-            bottom: 25px;
+            right: 20px;
+            bottom: 30px;
         }
         .speed-indicator .tick-label-6 {
             position: absolute;
@@ -374,7 +375,7 @@ end if
             bottom: 0px;
         }
         .speed-indicator .arrow {
-            width: 60px;  /* 2R */
+            width: 80px;  /* 2R */
             height: 4px; /* 2R */
             position: absolute;
             left: 20px;
@@ -418,7 +419,8 @@ end if
             background: radial-gradient(farthest-side ellipse at top left, white, #FF0000);
         }
         .string-indicator {
-            width: 100px;  
+            width: 200px;  
+            font-size: 16pt;
             color: #000000;
             cursor: pointer;
         }
@@ -494,6 +496,7 @@ end if
         this.content = '';
         this.MsgCode = '';
         this.connectedIndicators = [];
+        this.isVisible = 1;
         this.style = "position: absolute; top: "+this.top+"px; left: "+this.left+"px;"
 
         if (indicatorType == 'simple-indicator') {
@@ -620,7 +623,8 @@ end if
             $("#divConnected").hide();
             $("#divMin").hide();
             $("#divMax").hide();
-
+            $("#activeisVisible").prop('checked',!!selectedObject.isVisible);
+            $("#divisVisible").show();
         }
        if (selectedObject.type == 'string-indicator')   { 
             $("#activeObjectContent").val(hexDecode(selectedObject.content));
@@ -631,6 +635,8 @@ end if
             $("#divConnected").hide();
             $("#divMin").hide();
             $("#divMax").hide();
+            $("#activeisVisible").prop('checked',!!selectedObject.isVisible);
+            $("#divisVisible").show();
         }
         if (selectedObject.type == 'complex-indicator')   { 
             $("#connectedIndicators option").prop("selected", false);
@@ -639,14 +645,16 @@ end if
             });
             $("#divMsgCode").hide();
             $("#divContent").hide();
-            $("#divRadius").hide();
             $("#divConnected").show();
             //var diametr = $("#"+selectedObject.id).css("width");
             //diametr = diametr.slice(0,-2)*1/2;
             $("#activeObjectRadius").val(   selectedObject.radius  );
-            $("#activeObjectRadius").show();
+            //$("#activeObjectRadius").show();
+            $("#divRadius").show();
             $("#divMin").hide();
             $("#divMax").hide();
+            $("#activeisVisible").prop('checked',!!selectedObject.isVisible);
+            $("#divisVisible").show();
         } 
         if (selectedObject.type == 'speed-indicator')   {
             $("#divMsgCode").hide();
@@ -657,6 +665,8 @@ end if
             $("#activeMax").val(selectedObject.maxSpeed );
             $("#divMin").show();
             $("#divMax").show();
+            $("#activeisVisible").prop('checked',!!selectedObject.isVisible);
+            $("#divisVisible").show();
         } 
         
         
@@ -713,7 +723,8 @@ end if
                     IndicatorsList[i].minSpeed=$("#activeMin").val(); 
                     IndicatorsList[i].maxSpeed=$("#activeMax").val(); 
                 }
-               
+
+                IndicatorsList[i].isVisible=+$("#activeisVisible").is(':checked');
                 break;
             }
         }       
@@ -965,6 +976,7 @@ end if
         $("#divContent").hide();
         $("#divMin").hide();
         $("#divMax").hide();
+        $("#divisVisible").hide();
         $(".simple-indicator, .complex-indicator, .string-indicator, .speed-indicator").remove();
         $('#selectActiveObject').html('');
         $('#connectedIndicators').html('');
@@ -1111,7 +1123,7 @@ function hexDecode(str){
                 <input type="text" id="activeObjectY" value="0">
                 <!-- <input type="button" onclick="moveActiveObject()" value="Переместить"> -->
             </div>
-            <!--  divContent, divRadius, divMsgCode, divConnected, divMin, divMax -->
+            <!--  divContent, divRadius, divMsgCode, divConnected, divMin, divMax, divisVisible -->
                 <div id="divContent">
                     <span>Текст</span><br>
                     <input type="text" id="activeObjectContent" value="">
@@ -1138,6 +1150,11 @@ function hexDecode(str){
                     <span>Максимум</span><br>
                     <input type="text" id="activeMax" value="">
                 </div>
+                <div id="divisVisible">
+                    <span>Видимый</span><br>
+                    <input type="checkbox" id="activeisVisible" checked="checked">
+                </div>
+            
             <div>
                 <input type="button" onclick="changeActiveObject()" value="Сохранить изменения">
             </div>

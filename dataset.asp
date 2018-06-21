@@ -16,6 +16,11 @@ tag=Request("tag")
 prm=Request("prm")
 prm2=Request("prm2")
 
+' Змена , на .
+function d(v)
+	d = replace(v,",",".")
+end function
+
 if ds="OperationsHistory" then
   SQL_="SELECT DT_FILE, SUM(QUANTITY) AS Q FROM vw_NV_Operations_History "&_
   "WHERE [NAME]='"&tag&"' AND DIRECTION='"&prm&"' AND IsFailed=0 AND (DT_FILE>=CONVERT(datetime, FLOOR(CONVERT(float, GETDATE()))+("&prm2&"))) AND (DT_FILE<CONVERT(datetime, FLOOR(CONVERT(float, GETDATE()))+("&prm2&")+1)) "&_
@@ -784,8 +789,61 @@ if ds="Voc" then
 		Response.Write("</tbody></table></div>")
 		Rs.Close
 	end if
+	'-----------Channel Groups--------------------------------------------------------------
+	if prm=5 then
+		SQL_="SELECT File_Type, Channel_Group, Channel, ISNULL(Warning_Count,0) Warning_Count, ISNULL(Error_Count,0) Error_Count, ISNULL(Min_Count,0) Min_Count FROM  Channel_Config"
+		Rs.Open SQL_, Conn
+		Response.Write "<table cellpadding=""0"" cellspacing=""0"" style=""font-size: 10pt;"">"
+		Response.Write "<tr><th width=""50px"" >Тип файла</th><th width=""100px"" >Группа каналов</th><th width=""200px"">Канал</th>"
+		Response.Write "<th width=""50px"">Допустимое значение</th><th width=""50px"">Критичное значение</th>"
+		Response.Write "<th width=""50px"" >Минимальный порог по количеству всех операций</th><th>&nbsp;</th></tr>"
+		Response.Write("<tbody>")
+		if not Rs.Eof then
+			ColCount=Rs.Fields.Count
+			do while not Rs.Eof
+				id=Rs.Fields("Channel_Group")
+				Response.Write("<tr id=""r"&id&""" onclick=""javascript: selectRow('"&id&"');"">")
+				for i=0 to ColCount-1
+					Response.Write("<td>"&NBSP(Trim(Rs.Fields(i)))&"</td>")
+				next
+				Response.Write("<td><span onclick=""javascript: EditChannelGroup('"&id&"');"">[Изменить]</span></td></tr>"&vbCrLf)
+				Rs.MoveNext
+			loop
+		else
+			Response.Write("<tr><td colspan=""6"">Нет данных</td></tr>")
+		end if
+		Response.Write "</tbody></table>"
+		Rs.Close
+	end if	
 	
 end if
+
+'-------START: Channel Groups--------------------------------------------------------------
+if ds="GetChannelGroup" then
+	SQL_="SELECT File_Type, Channel_Group, Channel, ISNULL(Warning_Count,0) Warning_Count, ISNULL(Error_Count,0) Error_Count, ISNULL(Min_Count,0) Min_Count, ISNULL(Limit_Count,0) Limit_Count,  ISNULL(Lowactivity_start,0) Lowactivity_start, ISNULL(Lowactivity_end,0) Lowactivity_end FROM Channel_Config where Channel_Group='"&prm&"' "
+	Rs.Open SQL_, Conn
+	if not Rs.Eof then
+		Response.Write "{ ""cg_ftype"": """&Rs.Fields("File_Type")&""", ""cg_group"": """&Rs.Fields("Channel_Group")&""", ""cg_channel"": """&Rs.Fields("Channel")&""", ""cg_warning"": "&d(Rs.Fields("Warning_Count"))&", ""cg_error"":  "&d(Rs.Fields("Error_Count"))&", ""cg_minimal"":  "&Rs.Fields("Min_Count")&", ""cg_limit"": "&Rs.Fields("Limit_Count")&", ""cg_lowactivity_start"": "&Rs.Fields("Lowactivity_start")&", ""cg_lowactivity_end"": "&Rs.Fields("Lowactivity_end")&"  }"
+	end if
+	Rs.Close
+end if
+
+if ds="SaveChannelGroup" then
+	cg_group=Request("cg_group")
+	cg_warning=d(Request("cg_warning"))
+	cg_error=d(Request("cg_error"))
+	cg_minimal=Request("cg_minimal")
+
+    cg_limit=Request("cg_limit")
+    cg_lowactivity_start=Request("cg_lowactivity_start")
+    cg_lowactivity_end=Request("cg_lowactivity_end")
+
+	SQL_="UPDATE Channel_Config set Warning_Count="&cg_warning&", Error_Count="&cg_error&", Min_Count="&cg_minimal
+    SQL_=SQL_&" , Limit_Count="&cg_limit&", Lowactivity_start="&cg_lowactivity_start&", Lowactivity_end="&cg_lowactivity_end&"  where Channel_Group='"&cg_group&"' "
+	Cmd.CommandText=SQL_
+	Cmd.Execute
+end if
+'-------END: Channel Groups--------------------------------------------------------------
 
 if ds="GetUserProp" then
 	SQL_="SELECT [User_ID],[User_Name],[User_Login],[Role],[Phone],[Email] FROM Users WHERE [User_ID]="&prm
@@ -862,6 +920,195 @@ if ds="GetTag" then
 	end if
 	Rs.Close
 end if
+
+'----------------------------------------------------------------------------------------------------
+'-------START: Channel Groups------------------------------------------------------------------------
+'----------------------------------------------------------------------------------------------------
+if ds="ChannelISS" then
+
+	Series = ""
+	Series_FAIL = ""
+	RequestParam = ""
+	if (prm2="ISS_VISA") then
+		RequestParam = " SOURCE_CHANNEL='VISA' "
+	elseif (prm2="ISS_MC") then
+		RequestParam = " SOURCE_CHANNEL='MasterCard' "
+	elseif (prm2="ISS_NSPK_VISA") then
+		RequestParam = " SOURCE_CHANNEL='NSPK_VISA' "
+	elseif (prm2="ISS_NSPK_MC") then
+		RequestParam = " SOURCE_CHANNEL='NSPK_MasterCard' "
+	elseif (prm2="ISS_MIR") then
+		RequestParam = " SOURCE_CHANNEL='NSPK MIR' "	
+	end if
+
+	DBefore = Request("DBefore")
+	if Request("DBefore")<>"" then
+		DBefore = Request("DBefore")
+	else
+		DBefore = 0
+	end if
+		
+	sqlstr = "set dateformat ymd; SELECT DATEADD(MONTH,-1,[TIME]) [TIME],SUM(OPERATION) OPERATION,SUM(OPERATION_FAIL) OPERATION_FAIL, SOURCE_CHANNEL FROM LOG_VO "
+	sqlstr = sqlstr&" WHERE [TIME]>=convert(datetime,floor(convert(float,DATEADD(DAY,"&DBefore&",GETDATE()) ))) "
+	sqlstr = sqlstr&" and [TIME]<convert(datetime,floor(convert(float, DATEADD(DAY,"&DBefore&"+1,GETDATE()) ))) "
+	sqlstr = sqlstr&" and "&RequestParam&" GROUP BY [TIME], SOURCE_CHANNEL order by [TIME]"
+	Rs.Open sqlstr, Conn
+	If not Rs.EOF then
+	do while (not Rs.EOF)
+	
+	    v = Rs.Fields("OPERATION")-Rs.Fields("OPERATION_FAIL")
+		v1 = Rs.Fields("OPERATION_FAIL")
+
+		if (Series<>"") then 
+			Series = Series&",{x: Date.UTC("&DateTimeFormat(Rs.Fields("TIME"), "yyyy, mm, dd, hh, nn")&"), y: "&v&"}"
+			Series_FAIL = Series_FAIL&",{x: Date.UTC("&DateTimeFormat(Rs.Fields("TIME"), "yyyy, mm, dd, hh, nn")&"), y: "&v1&"}"
+		else
+			Series = Series&"{x: Date.UTC("&DateTimeFormat(Rs.Fields("TIME"), "yyyy, mm, dd, hh, nn")&"), y: "&v&"}"
+			Series_FAIL = Series_FAIL&"{x: Date.UTC("&DateTimeFormat(Rs.Fields("TIME"), "yyyy, mm, dd, hh, nn")&"), y: "&v1&"}"
+		end if 
+		
+		Rs.MoveNext
+	loop
+	end if
+	Rs.Close
+	
+	Response.Write(Series&"~"&Series_FAIL)
+	
+end if
+
+if ds="ChannelACQ" then
+
+	Series = ""
+	Series_FAIL = ""
+	RequestParam = ""
+	if (prm2="ACQ_VISA") then
+		RequestParam = " (TARGET_CHANNEL='VISA' or TARGET_CHANNEL='VISA SMS') "
+	elseif (prm2="ACQ_MC") then
+		RequestParam = " TARGET_CHANNEL='MasterCard' "
+	elseif (prm2="ACQ_NSPK_VISA") then
+		RequestParam = " (TARGET_CHANNEL='NSPK_VISA' or TARGET_CHANNEL='NSPK_VISA SMS') "
+	elseif (prm2="ACQ_NSPK_MC") then
+		RequestParam = " TARGET_CHANNEL='NSPK_MasterCard' "
+	elseif (prm2="ACQ_MIR") then
+		RequestParam = " TARGET_CHANNEL='NSPK MIR' "	
+	end if
+		
+	sqlstr = "SELECT DATEADD(MONTH,-1,[TIME]) [TIME],SUM(OPERATION) OPERATION,SUM(OPERATION_FAIL) OPERATION_FAIL FROM LOG_VO "
+	sqlstr = sqlstr&" WHERE [TIME]>=convert(datetime,floor(convert(float,Getdate()))) and "&RequestParam&" GROUP BY [TIME] order by [TIME]"
+	Rs.Open sqlstr, Conn
+	If not Rs.EOF then
+	do while (not Rs.EOF)
+	
+	    v = Rs.Fields("OPERATION")-Rs.Fields("OPERATION_FAIL")
+		v1 = Rs.Fields("OPERATION_FAIL")
+
+		if (Series<>"") then 
+			Series = Series&",{x: Date.UTC("&DateTimeFormat(Rs.Fields("TIME"), "yyyy, mm, dd, hh, nn")&"), y: "&v&"}"
+			Series_FAIL = Series_FAIL&",{x: Date.UTC("&DateTimeFormat(Rs.Fields("TIME"), "yyyy, mm, dd, hh, nn")&"), y: "&v1&"}"
+		else
+			Series = Series&"{x: Date.UTC("&DateTimeFormat(Rs.Fields("TIME"), "yyyy, mm, dd, hh, nn")&"), y: "&v&"}"
+			Series_FAIL = Series_FAIL&"{x: Date.UTC("&DateTimeFormat(Rs.Fields("TIME"), "yyyy, mm, dd, hh, nn")&"), y: "&v1&"}"
+		end if 
+		
+		Rs.MoveNext
+	loop
+	end if
+	Rs.Close
+	
+	Response.Write(Series&"~"&Series_FAIL)
+	
+end if
+
+'----------------------------------------------------------------------------------------------------
+
+if ds="ChannelATM" then
+
+	Series = ""
+	Series_FAIL = ""
+	RequestParam = ""
+	if (prm2="All_ATM") then
+		RequestParam = " SOURCE_CHANNEL='OUR_ATM' "
+	elseif (prm2="All_BPT") then
+		RequestParam = " SOURCE_CHANNEL='OUR_BPT' "
+	elseif (prm2="All_POS") then
+		RequestParam = " SOURCE_CHANNEL='OUR_POS' "
+	elseif (prm2="All_H2H_RBS") then
+		RequestParam = " SOURCE_CHANNEL='H2H_BPCRBS' "
+	end if
+		
+	sqlstr = "SELECT DATEADD(MONTH,-1,[TIME]) [TIME],SUM(OPERATION) OPERATION,SUM(OPERATION_FAIL) OPERATION_FAIL, SOURCE_CHANNEL FROM LOG_VO WHERE [TIME]>=convert(datetime,floor(convert(float,Getdate()))) and "&RequestParam&" GROUP BY [TIME], SOURCE_CHANNEL order by [TIME]"
+	Rs.Open sqlstr, Conn
+	If not Rs.EOF then
+	do while (not Rs.EOF)
+	
+	    v = Rs.Fields("OPERATION")-Rs.Fields("OPERATION_FAIL")
+		v1 = Rs.Fields("OPERATION_FAIL")
+
+		if (Series<>"") then 
+			Series = Series&",{x: Date.UTC("&DateTimeFormat(Rs.Fields("TIME"), "yyyy, mm, dd, hh, nn")&"), y: "&v&"}"
+			Series_FAIL = Series_FAIL&",{x: Date.UTC("&DateTimeFormat(Rs.Fields("TIME"), "yyyy, mm, dd, hh, nn")&"), y: "&v1&"}"
+		else
+			Series = Series&"{x: Date.UTC("&DateTimeFormat(Rs.Fields("TIME"), "yyyy, mm, dd, hh, nn")&"), y: "&v&"}"
+			Series_FAIL = Series_FAIL&"{x: Date.UTC("&DateTimeFormat(Rs.Fields("TIME"), "yyyy, mm, dd, hh, nn")&"), y: "&v1&"}"
+		end if 
+		
+		Rs.MoveNext
+	loop
+	end if
+	Rs.Close
+	
+	Response.Write(Series&"~"&Series_FAIL)
+	
+end if
+
+'----------------------------------------------------------------------------------------------------
+
+if ds="Channel3DS" then
+
+	Series = ""
+	Series_FAIL = ""
+	RequestParam = ""
+	if (prm2="NSPK_VISA") then
+		RequestParam = " SOURCE_CHANNEL='NSPK_VISA' and SERVICE='3D-Secure'  "
+	elseif (prm2="NSPK_MC") then
+		RequestParam = " SOURCE_CHANNEL='NSPK_MasterCard' and SERVICE='3D-Secure'  "
+	elseif (prm2="VISA") then
+		RequestParam = " SOURCE_CHANNEL='VISA' and SERVICE='3D-Secure' "
+	elseif (prm2="MC") then
+		RequestParam = " SOURCE_CHANNEL='MasterCard' and SERVICE='3D-Secure' "
+	elseif (prm2="SOA_USB") then
+		RequestParam = " SOURCE_CHANNEL='RBS' and SERVICE='SOA_USB'  "
+	elseif (prm2="SOA_AGENT") then
+		RequestParam = " SOURCE_CHANNEL='OUR_POS' and SERVICE='SOA_AGENT' "
+	end if
+		
+	sqlstr = "SELECT DATEADD(MONTH,-1,[TIME]) [TIME],SUM(OPERATION) OPERATION,SUM(OPERATION_FAIL) OPERATION_FAIL, SOURCE_CHANNEL FROM LOG_VS WHERE [TIME]>=convert(datetime,floor(convert(float,Getdate()))) and "&RequestParam&" GROUP BY [TIME], SOURCE_CHANNEL order by [TIME]"
+	Rs.Open sqlstr, Conn
+	If not Rs.EOF then
+	do while (not Rs.EOF)
+	
+	    v = Rs.Fields("OPERATION")-Rs.Fields("OPERATION_FAIL")
+		v1 = Rs.Fields("OPERATION_FAIL")
+
+		if (Series<>"") then 
+			Series = Series&",{x: Date.UTC("&DateTimeFormat(Rs.Fields("TIME"), "yyyy, mm, dd, hh, nn")&"), y: "&v&"}"
+			Series_FAIL = Series_FAIL&",{x: Date.UTC("&DateTimeFormat(Rs.Fields("TIME"), "yyyy, mm, dd, hh, nn")&"), y: "&v1&"}"
+		else
+			Series = Series&"{x: Date.UTC("&DateTimeFormat(Rs.Fields("TIME"), "yyyy, mm, dd, hh, nn")&"), y: "&v&"}"
+			Series_FAIL = Series_FAIL&"{x: Date.UTC("&DateTimeFormat(Rs.Fields("TIME"), "yyyy, mm, dd, hh, nn")&"), y: "&v1&"}"
+		end if 
+		
+		Rs.MoveNext
+	loop
+	end if
+	Rs.Close
+	
+	Response.Write(Series&"~"&Series_FAIL)
+	
+end if
+'----------------------------------------------------------------------------------------------------
+'-------END: Channel Groups--------------------------------------------------------------------------
+'----------------------------------------------------------------------------------------------------
 
 Conn.Close
 set Cmd = Nothing

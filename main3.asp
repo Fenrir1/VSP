@@ -47,31 +47,8 @@ function parseInterval(minInterval)
 end function
 
 '--------------------------------------------------------------------------------
-'------START: Auto update series-------------------------------------------------
-'--------------------------------------------------------------------------------
-tempTime = Now
-sqlstr = "set dateformat dmy; exec sp_Update_Interwal_Series @Date='"&DateTimeFormat(tempTime, "dd.mm.yy hh:nn")&"'"
-'Rs.Open sqlstr, Conn
-
-sqlstr = "set dateformat dmy; exec sp_Update_Warning_Series @Date='"&DateTimeFormat(tempTime, "dd.mm.yy hh:nn")&"'"
-'Rs.Open sqlstr, Conn
-'--------------------------------------------------------------------------------
-'------END: Auto update series---------------------------------------------------
-'--------------------------------------------------------------------------------
-
-'--------------------------------------------------------------------------------
 '------START: get main vars---------------------------------------------
 '--------------------------------------------------------------------------------
-Color2=0
-dim Colors2(4,2)
-dim Text2(4,2)
-for i=1 to 4
-  for j=1 to 2
-    Colors2(i, j)=0
-	Text2(i,j)=""
-  next
-next  
-
 dim series(10), ATMID(10,4), TOP5TABLES(5)
 for i=0 to 10 
   series(i)=""
@@ -81,23 +58,24 @@ for i=0 to 10
   ATMID(i,3)=0	' DaysCount
 next
 
+'Пустые таблицы ТОП5
 for i=0 to 5
-	TOP5TABLES(i)="<table width=""97%"" cellspacing=""0"" ><tr><td style='border: solid 1px #C0C0C0; font-size: 18pt; font-weight: 400;' >&nbsp;</td></tr>"&_
-				  "<tr><td style='border: solid 1px #C0C0C0; font-size: 18pt; font-weight: 400;' >&nbsp;</td></tr>"&_
-				  "<tr><td style='border: solid 1px #C0C0C0; font-size: 18pt; font-weight: 400;' >&nbsp;</td></tr>"&_
-				  "<tr><td style='border: solid 1px #C0C0C0; font-size: 18pt; font-weight: 400;' >&nbsp;</td></tr>"&_
-				  "<tr><td style='border: solid 1px #C0C0C0; font-size: 18pt; font-weight: 400;' >&nbsp;</td></tr>"&_
-				  "<tr><td style='border: solid 1px #C0C0C0; font-size: 18pt; font-weight: 400;' >"&_
+	TOP5TABLES(i)="<table width=""97%"" cellspacing=""0"" ><tr><td style='border-top: solid 1px #C0C0C0;border-left: solid 1px #C0C0C0;border-right: solid 1px #C0C0C0; font-size: 18pt; font-weight: 400;' >&nbsp;</td></tr>"&_
+				  "<tr><td style='border-top: solid 1px #C0C0C0;border-left: solid 1px #C0C0C0;border-right: solid 1px #C0C0C0; font-size: 18pt; font-weight: 400;' >&nbsp;</td></tr>"&_
+				  "<tr><td style='border-top: solid 1px #C0C0C0;border-left: solid 1px #C0C0C0;border-right: solid 1px #C0C0C0; font-size: 18pt; font-weight: 400;' >&nbsp;</td></tr>"&_
+				  "<tr><td style='border-top: solid 1px #C0C0C0;border-left: solid 1px #C0C0C0;border-right: solid 1px #C0C0C0; font-size: 18pt; font-weight: 400;' >&nbsp;</td></tr>"&_
+				  "<tr><td style='border-top: solid 1px #C0C0C0;border-left: solid 1px #C0C0C0;border-right: solid 1px #C0C0C0; font-size: 18pt; font-weight: 400;' >&nbsp;</td></tr>"&_
+				  "<tr><td style='border-top: solid 1px #C0C0C0;border-left: solid 1px #C0C0C0;border-right: solid 1px #C0C0C0;border-bottom: solid 1px #C0C0C0; font-size: 18pt; font-weight: 400;' >"&_
 				  "<div style='width= 100%; height: 62px; overflow: hidden;' >&nbsp;</div></td></tr></table>"
 next
 
     ATMIDList = ""
+
+'---------------------------------------------------------------------------------------------------------
+'---START: Формируем список опбражаемых устройств ATMID(NumEmv,DeviceType,DeviceID,DaysCount)-------------
 	sqlstr = "select top 10 vd.DeviceID,vd.NumEmv,vd.DeviceType,ISNULL(vd.DaysCount,0) DaysCount,vd.City,vd.Address,vd.Location,vd.SERIAL_NUMBER,vd.Type "
 	sqlstr = sqlstr&" from VIP_Day_Order  vdo join VIP_Device vd on vd.DeviceID=vdo.DeviceID and vd.DeviceType=vdo.DeviceType "
-	'sqlstr = sqlstr&" where exists(select * from VIP_Intervals_Series where "
-	'sqlstr = sqlstr&" DeviceType=vd.DeviceType and DeviceId=vd.DeviceId and [Time]>=convert(datetime,FLOOR(convert(float,GETDATE())))) "
 	sqlstr = sqlstr&" order by OrderNum "
-
     count = 0
     Rs.Open sqlstr, Conn
     If not Rs.EOF then
@@ -114,8 +92,8 @@ next
 				ATMID(count,1)=Rs.Fields("DeviceType")
 				ATMID(count,2)=Rs.Fields("DeviceID")
 				ATMID(count,3)=Rs.Fields("DaysCount")
-                if (ATMIDList<>"") then ATMIDList = ATMIDList&"," end if
-                ATMIDList = ATMIDList&Rs.Fields("DeviceID")
+                'if (ATMIDList<>"") then ATMIDList = ATMIDList&"," end if
+                'ATMIDList = ATMIDList&Rs.Fields("DeviceID")
                 count = count+1
             end if
             Rs.MoveNext
@@ -126,8 +104,6 @@ next
 	sqlstr = "select NumEmv, DeviceType, DeviceID, ISNULL(DaysCount,0) DaysCount from VIP_Device vd where exists(select * from VIP_Intervals_Series where "
 	sqlstr = sqlstr&" DeviceType=vd.DeviceType and DeviceId=vd.DeviceId and [Time]>=convert(datetime,FLOOR(convert(float,GETDATE())))) "
 	sqlstr = sqlstr&" order by ISNULL(DaysCount,0), DeviceType, DeviceID "
-	
-
     Rs.Open sqlstr, Conn
     If not Rs.EOF then
         do while ((not Rs.EOF)and(count<=10))
@@ -143,18 +119,20 @@ next
 				ATMID(count,1)=Rs.Fields("DeviceType")
 				ATMID(count,2)=Rs.Fields("DeviceID")
 				ATMID(count,3)=Rs.Fields("DaysCount")
-                if (ATMIDList<>"") then ATMIDList = ATMIDList&"," end if
-                ATMIDList = ATMIDList&Rs.Fields("DeviceID")
+                'if (ATMIDList<>"") then ATMIDList = ATMIDList&"," end if
+                'ATMIDList = ATMIDList&Rs.Fields("DeviceID")
                 count = count+1
             end if
             Rs.MoveNext
         loop
     end if
-    Rs.Close	
+    Rs.Close
+'---END: Формируем список опбражаемых устройств ATMID(NumEmv,DeviceType,DeviceID,DaysCount)-------------	
+'-------------------------------------------------------------------------------------------------------
 	
-	'------------------------------------
-	'--START: Series for Chart1----------
-	'------------------------------------
+'------------------------------------
+'--START: Series for Chart1----------
+'------------------------------------
 	for i=0 to 10 
 	  if (ATMID(i,0)="") then
 		exit for
@@ -185,26 +163,26 @@ next
 	'--END: Series for Chart1------------
 	'------------------------------------
 
-AllSeries=""
-for i=0 to 10
-  if series(i)<>"" then
-    series(i)=left(series(i), len(series(i))-1)
-    'scatter
-	if (i>0) then
-		series(i)=", { name: '"&ATMID(i,0)&"', type: 'scatter', data: ["&series(i)&"]}"  
-	else 
-		series(i)=" { name: '"&ATMID(i,0)&"', type: 'scatter', data: ["&series(i)&"]}" 
-	end if 
-	'CID(i)=left(CID(i), 12)
-  end if
-  AllSeries=AllSeries+series(i)
-next
+	AllSeries=""
+	for i=0 to 10
+	  if series(i)<>"" then
+		series(i)=left(series(i), len(series(i))-1)
+		'scatter
+		if (i>0) then
+			series(i)=", { name: '"&ATMID(i,0)&"', type: 'scatter', data: ["&series(i)&"]}"  
+		else 
+			series(i)=" { name: '"&ATMID(i,0)&"', type: 'scatter', data: ["&series(i)&"]}" 
+		end if 
+		'CID(i)=left(CID(i), 12)
+	  end if
+	  AllSeries=AllSeries+series(i)
+	next
 
-if (AllSeries="") then
-	AllSeries = AllSeries & "{ name: '00', type: 'scatter', visible: false, data: [ "
-	AllSeries = AllSeries & " {color: null, marker: {fillColor: '#FF0000', lineColor: '#FF0000', radius: 2}, "
- 	AllSeries = AllSeries & " x: Date.UTC("&DateTimeFormat(Now, "yyyy, mm, dd, hh, nn")&"), y: 0 } ]} "
-end if
+	if (AllSeries="") then
+		AllSeries = AllSeries & "{ name: '00', type: 'scatter', visible: false, data: [ "
+		AllSeries = AllSeries & " {color: null, marker: {fillColor: '#FF0000', lineColor: '#FF0000', radius: 2}, "
+		AllSeries = AllSeries & " x: Date.UTC("&DateTimeFormat(Now, "yyyy, mm, dd, hh, nn")&"), y: 0 } ]} "
+	end if
 '------------------------------------
 '--END: Series for Chart1------------
 '------------------------------------
@@ -216,25 +194,39 @@ end if
 '------------------------------------
 AllSeries2=""
 
-
+'Start Time
 if (DatePart("h",Now)>8) then
 	'tempTime =  cDate(DateTimeFormat(DateAdd("h", -8, Now), "dd.mm.yy hh:nn"))
 	tempTime =  DateAdd("h", -8, Now)
 	if (DatePart("n",tempTime)>32) then
 		tempTime =  cDate(DateTimeFormat(DateAdd("h", -7, Now), "dd.mm.yy hh:00"))
+		tempTime = DateAdd("n", -DatePart("n",tempTime), tempTime)
 	elseif (DatePart("n",tempTime)>5) then
 		tempTime =  cDate(DateTimeFormat(DateAdd("h", -8, Now), "dd.mm.yy hh:30"))
+		tempTime = DateAdd("n", -DatePart("n",tempTime), tempTime)
+		tempTime = DateAdd("n", 30, tempTime)
 	end if
 else
 	tempTime =  cDate(cStr(Date)&" 00:30:00")
 end if
 
-'tempTime = cDate(cStr(Date)&" 00:30:00")
+'Stop Time
 tempStopTime = Now
 
 do while (datediff("n",tempTime,tempStopTime)>=1)
 	FailDeviceCount = 0
+	'для проверки корректности значений
+	if DatePart("n",tempTime)>30 then
+		tempTime = DateAdd("s", -DatePart("s",tempTime), tempTime)
+		tempTime = DateAdd("n", -DatePart("n",tempTime), tempTime)
+		tempTime = DateAdd("n", 30, tempTime)
+	elseif ((DatePart("n",tempTime)>0)and(DatePart("n",tempTime)<30)) then 
+	    tempTime = DateAdd("s", -DatePart("s",tempTime), tempTime)
+	    tempTime = DateAdd("n", -DatePart("n",tempTime), tempTime)
+	end if
+	
 	sqlstr = "set dateformat dmy; select count(DeviceId) DeviceCount from VIP_Intervals_Series where [TIME]='"&DateTimeFormat(tempTime, "dd.mm.yy hh:nn")&"' "
+	'response.write "<p style='color: white;' >"&tempTime&"</p>"
 	Rs.Open sqlstr, Conn
 	If not Rs.EOF then
 		FailDeviceCount = Rs.Fields("DeviceCount")
@@ -320,7 +312,7 @@ Rs.Close
 
 
 circleIndicatorMarker = ""
-if (((TimeEV>PeriodEV) and (PeriodEV>0))or((TimeFV>PeriodFV)and (PeriodFV>0))or((TimeVA>PeriodVA)and (PeriodVA>0))or((TimeVC>PeriodVC)and (PeriodEV>0))) then
+if (((TimeEV>PeriodEV) and (PeriodEV>0))or((TimeFV>PeriodFV)and (PeriodFV>0))or((TimeVA>PeriodVA)and (PeriodVA>0))or((TimeVC>PeriodVC)and (PeriodVC>0))) then
 	circleIndicatorMarker = "circleIndicator.renderer.image('q.gif', 75, 75, 150, 150).add();"
 end if 
 '------------------------------------
@@ -486,9 +478,9 @@ Rs.Open sqlstr, Conn
 If not Rs.EOF then
 do while (not Rs.EOF)
 	TOP5TABLES(TableNum)="<table width=""97%"" cellspacing=""0"" >"&_
-					"<tr><td style='border: solid 1px #C0C0C0; font-size: 18pt; font-weight: 400;' >"&Left(cStr(Rs.Fields("DeviceType")&" "&Rs.Fields("NumEmv")),22)&"</td></tr>"&_
-					"<tr><td style='border: solid 1px #C0C0C0; font-size: 18pt; font-weight: 400;' >"&Left(cStr(Rs.Fields("City")),22)&"</td></tr>"&_
-					"<tr><td style='border: solid 1px #C0C0C0; font-size: 18pt; font-weight: 400;' >"
+					"<tr><td style='border-top: solid 1px #C0C0C0;border-left: solid 1px #C0C0C0;border-right: solid 1px #C0C0C0; font-size: 18pt; font-weight: 400;' >"&Left(cStr(Rs.Fields("DeviceType")&" "&Rs.Fields("NumEmv")),22)&"</td></tr>"&_
+					"<tr><td style='border-top: solid 1px #C0C0C0;border-left: solid 1px #C0C0C0;border-right: solid 1px #C0C0C0; font-size: 18pt; font-weight: 400;' >"&Left(cStr(Rs.Fields("City")),22)&"</td></tr>"&_
+					"<tr><td style='border-top: solid 1px #C0C0C0;border-left: solid 1px #C0C0C0;border-right: solid 1px #C0C0C0; font-size: 18pt; font-weight: 400;' >"
 	addr=cStr(Rs.Fields("Address"))
 	if (Len(cStr(addr))>25) then
 		TOP5TABLES(TableNum)= TOP5TABLES(TableNum)&"<marquee loop='infinite' width='365' >"&addr&"</marquee></td></tr>"
@@ -496,9 +488,9 @@ do while (not Rs.EOF)
 		TOP5TABLES(TableNum)= TOP5TABLES(TableNum)&"<div style='width: 368px; height: 31px;  word-wrap: break-word; overflow: hidden;' >"&addr&"</div></td></tr>"
 	end if 
 	
-	TOP5TABLES(TableNum)= TOP5TABLES(TableNum)&"<tr><td style='border: solid 1px #C0C0C0; font-size: 18pt; font-weight: 400;' >"&Left(cStr(parseInterval(Rs.Fields("IntervalLength"))),22)&"</td></tr>"&_
-					"<tr><td style='border: solid 1px #C0C0C0; font-size: 18pt; font-weight: 400;' >"&Left(cStr(Rs.Fields("Comment2")),22)&"</td></tr>"&_
-					"<tr><td style='border: solid 1px #C0C0C0; font-size: 18pt; font-weight: 400;' ><div style='width: 360px; height: 62px;  word-wrap: break-word; overflow: hidden;' >"&Rs.Fields("Comment1")&"</div></td></tr></table>"
+	TOP5TABLES(TableNum)= TOP5TABLES(TableNum)&"<tr><td style='border-top: solid 1px #C0C0C0;border-left: solid 1px #C0C0C0;border-right: solid 1px #C0C0C0; font-size: 18pt; font-weight: 400;' >"&Left(cStr(parseInterval(Rs.Fields("IntervalLength"))),22)&"</td></tr>"&_
+					"<tr><td style='border-top: solid 1px #C0C0C0;border-left: solid 1px #C0C0C0;border-right: solid 1px #C0C0C0; font-size: 18pt; font-weight: 400;' >"&Left(cStr(Rs.Fields("Comment2")),22)&"</td></tr>"&_
+					"<tr><td style='border-top: solid 1px #C0C0C0;border-left: solid 1px #C0C0C0;border-right: solid 1px #C0C0C0;border-bottom: solid 1px #C0C0C0; font-size: 18pt; font-weight: 400;' ><div style='width: 360px; height: 62px;  word-wrap: break-word; overflow: hidden;' >"&Rs.Fields("Comment1")&"</div></td></tr></table>"
 
 	TableNum = TableNum + 1
 	Rs.MoveNext
@@ -589,7 +581,7 @@ CurrentTimeLabel = DateTimeFormat(DateAdd("m", -1, cDate(LastFileTimeFull)), "hh
 <html>
 <head>
 		<meta http-equiv="Content-Type" content="text/html; charset=windows-1251">
-
+		<meta http-equiv="X-UA-Compatible" content="ie=edge">
 		<meta http-equiv='refresh' content='<%=TimeToReloadPage %>; url=main3.asp?topcount=<%=TopCount %>&timetoreload=<%=TimeToReloadTable %>'>
 
 		<!-- 1. Add these JavaScript inclusions in the head of your page -->
@@ -978,9 +970,9 @@ TD.Txt {
 	</tr>
 	<tr>
 		<td style="border: none;"  colspan="2" >
-			<div id="containerBB"  style="width: 510px; height: 294px; margin: 0 auto; font-size: 22pt;">
+			<div id="containerBB"  style="width: 513px; height: 294px; margin: 0; font-size: 22pt;">
 				<table border="0" height="100%" width="100%" cellspacing="0" >
-				  <tr><td style="border-top: solid 1px #C0C0C0; border-left: solid 1px #C0C0C0; border-right: solid 1px #C0C0C0; text-align: center; font-size: 20pt; font-weight: 400;">НЕИСПРАВНОСТЬ</td>
+				  <tr><td style="width: 300px; border-top: solid 1px #C0C0C0; border-left: solid 1px #C0C0C0; border-right: solid 1px #C0C0C0; text-align: center; font-size: 20pt; font-weight: 400;">НЕИСПРАВНОСТЬ</td>
 					<td style="border-top: solid 1px #C0C0C0;" ><% =LastFileTime %></td>
 					<td style="border-top: solid 1px #C0C0C0; border-left: solid 1px #C0C0C0; border-right: solid 1px #C0C0C0;" >ВСЕГО</td></tr>
 				  <tr><td style="border-left: solid 1px #C0C0C0; border-top: solid 1px #C0C0C0; border-right: solid 1px #C0C0C0; text-align: center; font-size: 20pt; font-weight: 400; color: #66FF66;">ПО СВЯЗИ</td>
