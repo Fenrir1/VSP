@@ -1,0 +1,1 @@
+ActiveScreen = {"screenid":0,"bgpath":"img/screen.png","screenname":"Undefined","indicators":[{"type":"speed-indicator","id":"speed-indicator-0","class":"speed-indicator","top":365,"left":494,"radius":0,"content":"","MsgCode":"","connectedIndicators":[],"style":"position: absolute; top: 150px; left: 0px;","minSpeed":0,"maxSpeed":180,"curSpeed":0}]}

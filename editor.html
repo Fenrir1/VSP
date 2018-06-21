@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Редактор экранов</title>
+    <script src="js\jquery-3.2.1.min.js"></script>
+    <script src="js\jquery-ui.min.js"></script>
+<style>
+        body {
+            background: url(screen.png) no-repeat #294959;
+            font-family: Arial;
+            position: relative;
+        }
+        .tools-panel {
+            width: 100%;
+            position: fixed;
+            top: 0px;
+            background:rgba(0,0,0,0.5);
+
+        }
+        .tools-panel>div{
+            float: left;
+            margin-left: 30px;
+
+        }
+        .speed-indicator {
+            /* radius = R */
+            width: 160px;  /* 2R */
+            height: 80px;
+            background-image:    url(speed-ticks.png);
+            background-size:     cover;                 
+            background-repeat:   no-repeat;
+            font-size: 10pt;
+            position: relative;
+            cursor: pointer;
+
+        }
+        .speed-indicator .tick-label-0 {
+            position: absolute;
+            left: 5px;
+            bottom: 0px;
+        }
+        .speed-indicator .tick-label-1 {
+            position: absolute;
+            left: 15px;
+            bottom: 25px;
+        }
+        .speed-indicator .tick-label-2 {
+            position: absolute;
+            left: 35px;
+            bottom: 50px;
+        }
+        .speed-indicator .tick-label-3 {
+            position: absolute;
+            left: 75px;
+            bottom: 60px;
+        }
+        .speed-indicator .tick-label-4 {
+            position: absolute;
+            right: 35px;
+            bottom: 50px;
+        }
+        .speed-indicator .tick-label-5 {
+            position: absolute;
+            right: 15px;
+            bottom: 25px;
+        }
+        .speed-indicator .tick-label-6 {
+            position: absolute;
+            right: 5px;
+            bottom: 0px;
+        }
+        .speed-indicator .arrow {
+            width: 60px;  /* 2R */
+            height: 4px; /* 2R */
+            position: absolute;
+            left: 20px;
+            bottom: 0px;
+            -moz-border-radius:  2px; /* R */
+            -webkit-border-radius: 2px ; /* R */
+            border-radius: 2px; /* R */
+            background: #FF0000;
+
+        }
+        .speed-indicator .multiplier {
+            position: absolute;
+            left: 75px;
+            bottom: 20px;
+        }
+
+        .simple-indicator {
+            /* radius = R */
+            width: 10px;  /* 2R */
+            height: 10px; /* 2R */
+            -moz-border-radius: 50%;; /* R */
+            -webkit-border-radius: 50%;; /* R */
+            border-radius: 50%;; /* R */
+            box-shadow: 0 0 2px rgba(0,0,0,0.5);
+            cursor: pointer;
+        }
+        .simple-indicator.status-green {
+            /*background: #7fee1d;*/
+            background: radial-gradient(farthest-side ellipse at top left, white, #7fee1d);
+        }
+        .simple-indicator.status-grey {
+            /*background: #7fee1d;*/
+            background: radial-gradient(farthest-side ellipse at top left, white, #999999);
+        }
+        .simple-indicator.status-yellow {
+            /*background: #7fee1d;*/
+            background: radial-gradient(farthest-side ellipse at top left, white, #FFCC33);
+        }
+        .simple-indicator.status-red {
+            /*background: #7fee1d;*/
+            background: radial-gradient(farthest-side ellipse at top left, white, #FF0000);
+        }
+        .string-indicator {
+            width: 100px;  
+            color: #000000;
+            cursor: pointer;
+        }
+        .string-indicator.status-green {
+            background:  #7fee1d;
+        }
+        .string-indicator.status-grey {
+            background:  #999999;
+        }
+        .string-indicator.status-yellow {
+            background: #FFCC33;
+        }
+        .string-indicator.status-red {
+            background: #FF0000;
+        }
+        .complex-indicator {
+            /* radius = R */
+            width: 60px;  /* 2R */
+            height: 60px; /* 2R */
+            -moz-border-radius: 50%;; /* R */
+            -webkit-border-radius: 50%;; /* R */
+            border-radius: 50%;; /* R */
+            cursor: pointer;
+            /*box-shadow: 0 0 2px rgba(0,0,0,0.5);*/
+        }
+        .complex-indicator.status-green {
+            /*background: #7fee1d;*/
+            background: #7fee1d;
+        }
+        .complex-indicator.status-yellow {
+            /*background: #7fee1d;*/
+            background: #FFCC33;
+        }
+        .complex-indicator.status-red {
+            /*background: #7fee1d;*/
+            background: #FF0000;
+        }
+</style>
+<script>
+
+    var DrawSpeedDigits = function(minSpeed, maxSpeed, speedId) {
+        for(var i=0; i<=6; i++) {
+            labelNumber = i;
+            speedLabel = minSpeed + i*(maxSpeed-minSpeed)/6
+            $('#'+speedId).append( "<span class='tick-label-"+labelNumber+"' >"+speedLabel+"</span>" );
+        }
+        
+    }
+
+    var DrawSpeedArrow = function(minSpeed, maxSpeed, curSpeed, speedId) {
+        if (curSpeed>maxSpeed) {
+            maxSpeed = maxSpeed*10;
+            minSpeed = minSpeed*10;
+            $('#'+speedId).append( "<span class='multiplier' >x10</span>" );
+        }
+        $('#'+speedId).append( "<div class='arrow' >&nbsp;</div>" );
+        var alpha = 180*curSpeed/(maxSpeed-minSpeed);
+        
+        $('#'+speedId+" .arrow").css({
+        "transform": "rotate("+alpha+"deg)",
+        "transform-origin": "right center" });
+
+    }
+
+    var IndicatorsList = [];
+//-------Type: Indicator------------------------------    
+    function Indicator(indicatorType, indicatorId) {
+        this.type = indicatorType;
+        this.id = indicatorId;
+        this.class = indicatorType;
+        this.top = 150;
+        this.left = 0;
+        this.content = '';
+        this.MsgCode = '';
+        this.connectedIndicators = [];
+        this.style = "position: absolute; top: "+this.top+"px; left: "+this.left+"px;"
+
+        if ((indicatorType == 'simple-indicator')||(indicatorType == 'complex-indicator') ) {
+            this.status = 'status-green';
+            this.class += ' '+this.status;
+        } 
+        if (indicatorType == 'string-indicator') {
+            this.status = 'status-green';
+            this.class += ' '+this.status;
+            this.content = 'Sample text'
+        }
+        if (indicatorType == 'speed-indicator') {
+                this.minSpeed = 0;
+                this.maxSpeed = 180;
+                this.curSpeed = 160;
+        }
+            
+     
+    };
+
+    Indicator.prototype.drawIndicator = function() {
+            var curType = this.type;
+            var selfObject = this;
+            $("body").append("<div style='"+this.style+"' class='"+this.class+"' id='"+this.id+"' >"+this.content+"</div>");
+            if (this.type == 'speed-indicator') {
+                DrawSpeedDigits(this.minSpeed,this.maxSpeed,this.id);
+                DrawSpeedArrow(this.minSpeed,this.maxSpeed,this.curSpeed,this.id);      
+            }
+            $('#'+this.id).draggable();
+            $('#'+this.id).on( "drag", function( event, ui ) {
+                selfObject.top = ui.position.top;
+                selfObject.left = ui.position.left;
+                $("#activeObjectX").val(ui.position.left);
+                $("#activeObjectY").val(ui.position.top);
+            } );
+            $('#'+this.id).on( "mousedown", function( event, ui ) {
+               // console.log('mousedown');
+                setActiveObject(selfObject);
+            } );
+            
+    };
+//-------Type: Indicator------------------------------        
+
+
+
+    function addObject() {
+        var objectType =  $("#selectObjectType").val();
+        var objectNumber = $('.'+objectType).length || 0;
+        while ($('#'+objectType+'-'+objectNumber).length) {
+            objectNumber++;
+        }
+
+        var newInditaor = new Indicator(objectType,objectType+'-'+objectNumber);
+
+        IndicatorsList.push(newInditaor);
+        updateObjectsInspectorSelect();
+        setActiveObject(newInditaor);
+        newInditaor.drawIndicator();
+        
+
+    }
+
+    function updateObjectsInspectorSelect() {
+        $('#selectActiveObject').html('');
+        $('#connectedIndicators').html('');
+        for(var i=0; i<IndicatorsList.length; i++) {
+            $('#selectActiveObject').append('<option value="'+IndicatorsList[i].id+'">'+IndicatorsList[i].id+'</option>');
+            if ((IndicatorsList[i].type == 'simple-indicator')||(IndicatorsList[i].type == 'string-indicator'))  {
+                $('#connectedIndicators').append('<option value="'+IndicatorsList[i].id+'">'+IndicatorsList[i].id+'</option>');
+            }
+
+            
+        }
+    }
+
+    function setActiveObject(selectedObject) {
+        //console.log('setActiveObject');
+        $("#selectActiveObject").val(selectedObject.id);
+        //console.log(selectedObject.top,selectedObject.left);
+        $("#activeObjectY").val(selectedObject.top);
+        $("#activeObjectX").val(selectedObject.left);
+        
+      if (selectedObject.type == 'simple-indicator')   { 
+            $("#activeObjectMsgCode").val(selectedObject.MsgCode);
+            $("#activeObjectMsgCode").show();
+            $("#activeObjectContent").hide();
+            $("#connectedIndicators").hide();
+        }
+       if (selectedObject.type == 'string-indicator')   { 
+            $("#activeObjectContent").val(selectedObject.content);
+            $("#activeObjectMsgCode").hide();
+            $("#activeObjectContent").show();
+            $("#connectedIndicators").hide();
+        }
+        if (selectedObject.type == 'complex-indicator')   { 
+            $("#connectedIndicators option").prop("selected", false);
+            selectedObject.connectedIndicators.forEach(function(item, i, arr) {
+                $("#connectedIndicators option[value='" + item + "']").prop("selected", true);
+            });
+            $("#activeObjectMsgCode").hide();
+            $("#activeObjectContent").hide();
+            $("#connectedIndicators").show();
+        }  
+        
+        
+    }
+
+    function fselectActiveObject() {
+        var activeObjectId =  $("#selectActiveObject").val();
+        for(var i=0; i<IndicatorsList.length; i++) {
+            if (IndicatorsList[i].id==activeObjectId) {
+                setActiveObject(IndicatorsList[i]);
+                break;
+            }
+        }
+    }
+
+    function moveActiveObject() {
+        var activeObjectId = $("#selectActiveObject").val();
+
+        for(var i=0; i<IndicatorsList.length; i++) {
+            if (IndicatorsList[i].id==activeObjectId) {
+                IndicatorsList[i].top=$("#activeObjectY").val();
+                IndicatorsList[i].left=$("#activeObjectX").val();
+                break;
+            }
+        }
+
+        $("#"+activeObjectId).css({
+            'left': $("#activeObjectX").val()+'px',
+            'top': $("#activeObjectY").val()+'px'
+             });
+
+    }
+
+    function changeActiveObject() {
+        var activeObjectId = $("#selectActiveObject").val();
+        for(var i=0; i<IndicatorsList.length; i++) {
+            if (IndicatorsList[i].id==activeObjectId) {
+                IndicatorsList[i].MsgCode=$("#activeObjectMsgCode").val();
+                IndicatorsList[i].connectedIndicators=$("#connectedIndicators").val(); 
+                IndicatorsList[i].content=$("#activeObjectContent").val(); 
+                break;
+            }
+        }       
+    }
+
+    function deleteActiveObject() {
+        var activeObjectId = $("#selectActiveObject").val();
+        for(var i=0; i<IndicatorsList.length; i++) {
+            if (IndicatorsList[i].id==activeObjectId) {
+                IndicatorsList.splice(i,1);
+                 $("#"+activeObjectId).remove();
+                updateObjectsInspectorSelect();
+                $("#activeObjectY").val('');
+                $("#activeObjectX").val('');
+                break;
+            }
+        }
+
+    }
+
+    $(function() {
+        //DrawSpeedDigits(0,180,'speed1');
+       // DrawSpeedArrow(0,180,45,'speed1');
+
+        $("#activeObjectMsgCode").hide();
+        //$("#connectedIndicators").hide();
+        $("#activeObjectContent").hide();
+
+
+        $(document).on( "keydown", function( event, ui ) {
+            var code = (event.keyCode ? event.keyCode : event.which);
+            var activeObjectId = $("#selectActiveObject").val();
+            if  ((activeObjectId != '')&&(! $("#activeObjectX").is( ":focus" ))&&(! $("#activeObjectY").is( ":focus" )))  {
+                if (code == 40) {
+                    console.log("down pressed");
+                    $("#activeObjectY").val(1*$("#activeObjectY").val()+5);
+                } else if (code == 38) {
+                    console.log("up pressed");
+                    $("#activeObjectY").val(1*$("#activeObjectY").val()-5);
+                }  else if (code == 37) {
+                    console.log("up pressed");
+                    $("#activeObjectX").val(1*$("#activeObjectX").val()-5);
+                }   else if (code == 39) {
+                    console.log("up pressed");
+                    $("#activeObjectX").val(1*$("#activeObjectX").val()+5);
+                } 
+                moveActiveObject();
+
+
+            }
+            
+        } );
+
+    });
+</script>
+</head>
+<body>
+    <div class="tools-panel">
+        <select id="selectObjectType">
+            <option value="simple-indicator">Простой индикатор</option>
+            <option value="complex-indicator">Составной индикатор</option>
+            <option value="string-indicator">Текстовый индикатор</option>
+            <option value="speed-indicator">Стрелочный индикатор</option>
+        </select>
+        <button onClick="addObject()">Создать</button>
+        <br>
+        <form id="activeObject" name="activeObject">
+            <select id="selectActiveObject" onchange="fselectActiveObject()" ></select>
+            <input type="text" id="activeObjectX" value="0">
+            <input style="vertical-align: top;" type="text" id="activeObjectY" value="0">
+            <input type="button" onclick="moveActiveObject()" value="Переместить">
+            <input style="vertical-align: top;"
+            type="text" id="activeObjectContent" value="">
+            <select id="activeObjectMsgCode"  onchange="selectActiveObjectMsgCode()" >
+                <option value="A1">A1</option>
+            </select>
+            <select class="select" id="connectedIndicators"  onchange="selectConnectedIndicators()"  multiple="" tabindex="3">
+                <option value=""></option>
+              </select>
+            <input type="button" onclick="changeActiveObject()" value="Сохранить изменения">
+            <input type="button" onclick="deleteActiveObject()" value="Удалить">
+        </form>
+
+    </div>
+
+</body>
+</html>
+
+<!-- Разработка: Берников И.П. -->
+<!-- Для вывода графиков используется библиотека Highcharts JS - http://highsoft.com/ -->
