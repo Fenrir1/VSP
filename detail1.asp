@@ -751,6 +751,7 @@ end if
 <html>
 <head>
 		<meta http-equiv="Content-Type" content="text/html; charset=windows-1251">
+		<meta http-equiv="X-UA-Compatible" content="ie=edge">
 		<!-- 1. Add these JavaScript inclusions in the head of your page -->
 		<script type="text/javascript" src="js/jquery.min.js"></script>
 		<script type="text/javascript" src="js/highcharts.js"></script>

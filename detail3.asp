@@ -168,14 +168,16 @@ next
 	  'v=VDCount-0.5-serieID
 	  v=VDCount-1-serieID
 	  v=replace(v, ",", ".")
-	  
-	  sqlstr = "select DeviceID,DeviceType,dateadd(month,-1,[TIME]) [TIME] from VIP_Intervals_Series where DeviceID="&ATMID(i,2)&" and DeviceType='"&ATMID(i,1)&"' "
+	  'dateadd(month,-1,[TIME])
+	  sqlstr = "select DeviceID,DeviceType,[TIME] from VIP_Intervals_Series where DeviceID="&ATMID(i,2)&" and DeviceType='"&ATMID(i,1)&"' "
 	  sqlstr = sqlstr&" and [TIME]>=convert(datetime,FLOOR(convert(float,Getdate()))) order by [TIME]"
 	  Rs.Open sqlstr, Conn
 	  If not Rs.EOF then
 		do while (not Rs.EOF)
 			'series(serieID) = series(serieID)&vbCrLf&"{x: Date.UTC("&DateTimeFormat(Rs.Fields("Start_time"), "yyyy, mm, dd, hh, nn")&"), y: "&v&"},"
-			series(serieID)=series(serieID)&vbCrLf&"{color: null, marker: {fillColor: '#FF0000', lineColor: '#FF0000', radius: 2}, x: Date.UTC("&DateTimeFormat(Rs.Fields("TIME"), "yyyy, mm, dd, hh, nn")&"), y: "&v&"},"
+			temp_DT=datepart("yyyy",Rs.Fields("TIME"))&", "&(datepart("m",Rs.Fields("TIME"))-1)&", "&datepart("d",Rs.Fields("TIME"))&", "&datepart("h",Rs.Fields("TIME"))&", "&datepart("n",Rs.Fields("TIME"))
+			'series(serieID)=series(serieID)&vbCrLf&"{color: null, marker: {fillColor: '#FF0000', lineColor: '#FF0000', radius: 2}, x: Date.UTC("&DateTimeFormat(Rs.Fields("TIME"), "yyyy, mm, dd, hh, nn")&"), y: "&v&"},"
+			series(serieID)=series(serieID)&vbCrLf&"{color: null, marker: {fillColor: '#FF0000', lineColor: '#FF0000', radius: 2}, x: Date.UTC("&temp_DT&"), y: "&v&"},"
 			Rs.MoveNext
         loop
 	  else
@@ -367,13 +369,18 @@ ValueFail_noUnion = ValueFail_link + ValueFail_money + ValueFail_hardware + Valu
 	  v=VDCount_warn-1-serieID
 	  v=replace(v, ",", ".")
 	  
-	  sqlstr = "select DeviceID,DeviceType,dateadd(month,-1,[TIME]) [TIME] from VIP_Warnings_Series where DeviceID="&ATMID_warn(i,2)&" and DeviceType='"&ATMID_warn(i,1)&"' "
+	  sqlstr = "select DeviceID,DeviceType,[TIME] from VIP_Warnings_Series where DeviceID="&ATMID_warn(i,2)&" and DeviceType='"&ATMID_warn(i,1)&"' "
 	  sqlstr = sqlstr&" and [TIME]>=convert(datetime,FLOOR(convert(float,Getdate()))) order by [TIME]"
 	  Rs.Open sqlstr, Conn
 	  If not Rs.EOF then
 		do while (not Rs.EOF)
 			'series(serieID) = series(serieID)&vbCrLf&"{x: Date.UTC("&DateTimeFormat(Rs.Fields("Start_time"), "yyyy, mm, dd, hh, nn")&"), y: "&v&"},"
-			series_warn(serieID)=series_warn(serieID)&vbCrLf&"{color: null, marker: {fillColor: '#99ccff', lineColor: '#99ccff', radius: 2}, x: Date.UTC("&DateTimeFormat(Rs.Fields("TIME"), "yyyy, mm, dd, hh, nn")&"), y: "&v&"},"
+			'series_warn(serieID)=series_warn(serieID)&vbCrLf&"{color: null, marker: {fillColor: '#99ccff', lineColor: '#99ccff', radius: 2}, x: Date.UTC("&DateTimeFormat(Rs.Fields("TIME"), "yyyy, mm, dd, hh, nn")&"), y: "&v&"},"
+			
+			
+			temp_DT=datepart("yyyy",Rs.Fields("TIME"))&", "&(datepart("m",Rs.Fields("TIME"))-1)&", "&datepart("d",Rs.Fields("TIME"))&", "&datepart("h",Rs.Fields("TIME"))&", "&datepart("n",Rs.Fields("TIME"))
+			'series(serieID)=series(serieID)&vbCrLf&"{color: null, marker: {fillColor: '#FF0000', lineColor: '#FF0000', radius: 2}, x: Date.UTC("&DateTimeFormat(Rs.Fields("TIME"), "yyyy, mm, dd, hh, nn")&"), y: "&v&"},"
+			series_warn(serieID)=series_warn(serieID)&vbCrLf&"{color: null, marker: {fillColor: '#99ccff', lineColor: '#99ccff', radius: 2}, x: Date.UTC("&temp_DT&"), y: "&v&"},"
 			Rs.MoveNext
         loop
 	  end if
@@ -640,14 +647,19 @@ end if
 '--------------------------------------------------------------------------------
 
 
-CurrentStratTime = DateTimeFormat(DateAdd("m", -1, Now), "yyyy, mm, dd, 0, 0")
-CurrentTime = DateTimeFormat(DateAdd("m", -1, Now), "yyyy, mm, dd, hh, nn")
-CurrentEndTime = DateTimeFormat(DateAdd("m", -1, Now), "yyyy, mm, dd, 23, 59")
+'CurrentStratTime = DateTimeFormat(DateAdd("m", -1, Now), "yyyy, mm, dd, 0, 0")
+'CurrentTime = DateTimeFormat(DateAdd("m", -1, Now), "yyyy, mm, dd, hh, nn")
+'CurrentEndTime = DateTimeFormat(DateAdd("m", -1, Now), "yyyy, mm, dd, 23, 59")
+CurrentStratTime = datepart("yyyy",Now)&", "&(datepart("m",Now)-1)&", "&datepart("d",Now)&", 0, 0"
+CurrentTime = datepart("yyyy",Now)&", "&(datepart("m",Now)-1)&", "&datepart("d",Now)&", "&datepart("h",Now)&", "&datepart("n",Now)
+CurrentEndTime = datepart("yyyy",Now)&", "&(datepart("m",Now)-1)&", "&datepart("d",Now)&", 23, 59"
+
 %>
 <!DOCTYPE HTML>
 <html>
 <head>
 		<meta http-equiv="Content-Type" content="text/html; charset=windows-1251">
+		<meta http-equiv="X-UA-Compatible" content="ie=edge">
 		<!-- 1. Add these JavaScript inclusions in the head of your page -->
 		<script type="text/javascript" src="js/jquery.min.js"></script>
 		<!-- <script type="text/javascript" src="js/highcharts.js"></script> -->
@@ -800,7 +812,6 @@ TH.A {
 						
 
 			$(document).ready(function() {
-				
 				
 				// Первый график
 			    chart1 = new Highcharts.Chart({
@@ -993,6 +1004,7 @@ TH.A {
 							point: {
 								events: {
 									click: function (e) {
+									
 										selectDevice(2,this.y,Highcharts.dateFormat('%d.%m.%Y %H:%M', this.x));
 										//lert(this.y);
 									}

@@ -1,13 +1,13 @@
 <%
+function Max(a,b) 
+    Max = a 
+    If b > a then Max = b 
+end function 
 
-function Max(s, i)
-  if s <= i then 
-		Max=i
-	else 
-		Max=s
-  end if
-  
-end function
+function Min(a,b) 
+    Min = a 
+    If b < a then Min = b 
+end function 
 
 function CutStr(s, i, c)
   if i < 1 then i=1 end if

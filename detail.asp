@@ -739,31 +739,31 @@ if T=6 then
 	Rs.Close
 end if
 
+
 '-------------------------------------------------------------------------------------------------------
 '-----------START: Channel Groups-----------------------------------------------------------------------
 '-------------------------------------------------------------------------------------------------------
 dim warnings(20,7)
 
-'if ((T=7)or(T=8)or(T=9)) then
-	' Заполнение Warings
-	i = 0
-	sqlstr = "SELECT Channel_Group, ISNULL(Warning_Count,0) Warning_Count, ISNULL(Error_Count,0) Error_Count, ISNULL(Min_Count,0) Min_Count, ISNULL(Limit_Count,0) Limit_Count,  ISNULL(Lowactivity_start,0) Lowactivity_start, ISNULL(Lowactivity_end,0) Lowactivity_end  FROM  Channel_Config"
-	Rs.OPEN sqlstr, CONN
-	if not RS.EOF then
-	do while (not RS.EOF)
-		warnings(i,0)=Rs.Fields("Channel_Group") ' Channel_Group
-		warnings(i,1)=Rs.Fields("Warning_Count")	' Warning_Count
-		warnings(i,2)=Rs.Fields("Error_Count")	' Error_Count
-		warnings(i,3)=Rs.Fields("Min_Count")	' Min_Count
-        warnings(i,4)=Rs.Fields("Limit_Count")	' Limit_Count
-        warnings(i,5)=Rs.Fields("Lowactivity_start")	' Lowactivity_start
-        warnings(i,6)=Rs.Fields("Lowactivity_end")	' Lowactivity_end
-		i = i+1
-		Rs.MoveNext
-	loop
-	end if
-	RS.CLOSE
-'end if
+
+' Заполнение Warings
+i = 0
+sqlstr = "SELECT Channel_Group, ISNULL(Warning_Count,0) Warning_Count, ISNULL(Error_Count,0) Error_Count, ISNULL(Min_Count,0) Min_Count, ISNULL(Limit_Count,0) Limit_Count,  ISNULL(Lowactivity_start,0) Lowactivity_start, ISNULL(Lowactivity_end,0) Lowactivity_end  FROM  Channel_Config"
+Rs.OPEN sqlstr, CONN
+if not RS.EOF then
+do while (not RS.EOF)
+	warnings(i,0)=Rs.Fields("Channel_Group") ' Channel_Group
+	warnings(i,1)=Rs.Fields("Warning_Count")	' Warning_Count
+	warnings(i,2)=Rs.Fields("Error_Count")	' Error_Count
+	warnings(i,3)=Rs.Fields("Min_Count")	' Min_Count
+			warnings(i,4)=Rs.Fields("Limit_Count")	' Limit_Count
+			warnings(i,5)=Rs.Fields("Lowactivity_start")	' Lowactivity_start
+			warnings(i,6)=Rs.Fields("Lowactivity_end")	' Lowactivity_end
+	i = i+1
+	Rs.MoveNext
+loop
+end if
+RS.CLOSE
 
 function checkWarning(paramName, failCount, totalCount, minutes_val)
 	res = "" 'clWarning clError
@@ -777,11 +777,11 @@ function checkWarning(paramName, failCount, totalCount, minutes_val)
 					res = clWarning
 				end if
 
-                 'if (warnings(j,6)>0) then
-                  '  if (((minutes_val<warnings(j,5))or(minutes_val>warnings(j,6)))and(totalCount<warnings(j,4))) then
-                  '      res = clError
-                  '  end if
-                'end if
+								'if (warnings(j,6)>0) then
+									'  if (((minutes_val<warnings(j,5))or(minutes_val>warnings(j,6)))and(totalCount<warnings(j,4))) then
+									'      res = clError
+									'  end if
+								'end if
 
 				checkWarning = res
 			end if
@@ -797,18 +797,18 @@ function checkWarning_all(paramName, failCount, totalCount, minutes_val)
 		for j=0 to UBound(warnings)
 			if (warnings(j,0)=paramName) then
 
-                 if (warnings(j,6)>0) then
-                    if (((minutes_val<warnings(j,5))or(minutes_val>warnings(j,6)))and(totalCount<warnings(j,4))) then
-                        res = clError
-                    end if
-                end if
+								if (warnings(j,6)>0) then
+										if (((minutes_val<warnings(j,5))or(minutes_val>warnings(j,6)))and(totalCount<warnings(j,4))) then
+												res = clError
+										end if
+								end if
 
 				checkWarning_all = res
 			end if
 		next
 	end if
 	checkWarning_all = res
-end function
+end function	
 
 
 '-------------------------------------------------------------------------------------------------------
@@ -1189,15 +1189,6 @@ end function
 		circleIndicatorColor3 = clError
 	end if
 	
-	
-	
-	'if ((All_3DS_Color = clWarning)or(All_SOA_Color = clWarning)) then
-	'	circleIndicatorColor3 = clWarning
-	'end if
-	
-	'if ((All_3DS_Color = clError)or(All_SOA_Color = clError)) then
-	'	circleIndicatorColor3 = clError
-	'end if	
 '-------------------------------------------------------------------------------------------------------
 '-------END: T=7,8,9 COLOR DEFINITION-------------------------------------------------------------------
 '-------------------------------------------------------------------------------------------------------
@@ -1418,20 +1409,20 @@ if T=7 then
 
 
 'tr_NSPK_VISA 
-  str_tr(1)  = "<tr><td width=""100px"" >NSPK_VISA</td><td onclick=""ChGraph('ISS_NSPK_VISA')"" width=""70px""  "&ISS_NSPK_VISA_Color_all&" >"&ISS_NSPK_VISA&"</td><td onclick=""ChGraph('ISS_NSPK_VISA')""  width=""70px"" >"&ISS_NSPK_VISA_FAIL&"</td><td onclick=""ChGraph('ISS_NSPK_VISA')""  width=""70px"" "&ISS_NSPK_VISA_Color&" >"&Round(ISS_NSPK_VISA_FAIL_PC,3)&"</td>"&_
-				"<td onclick=""ChGraph('ACQ_NSPK_VISA')""  width=""70px"" "&ACQ_NSPK_VISA_Color_all&" >"&ACQ_NSPK_VISA&"</td><td onclick=""ChGraph('ACQ_NSPK_VISA')""  width=""70px"" >"&ACQ_NSPK_VISA_FAIL&"</td><td onclick=""ChGraph('ACQ_NSPK_VISA')""  width=""70px"" "&ACQ_NSPK_VISA_Color&" >"&Round(ACQ_NSPK_VISA_FAIL_PC,3)&"</td><tr>"
+  str_tr(1)  = "<tr><td width=""100px"" >NSPK_VISA</td><td onclick=""ChGraph('ISS_NSPK_VISA',daysBefore)"" width=""70px""  "&ISS_NSPK_VISA_Color_all&" >"&ISS_NSPK_VISA&"</td><td onclick=""ChGraph('ISS_NSPK_VISA',daysBefore)""  width=""70px"" >"&ISS_NSPK_VISA_FAIL&"</td><td onclick=""ChGraph('ISS_NSPK_VISA',daysBefore)""  width=""70px"" "&ISS_NSPK_VISA_Color&" >"&Round(ISS_NSPK_VISA_FAIL_PC,3)&"</td>"&_
+				"<td onclick=""ChGraph('ACQ_NSPK_VISA',daysBefore)""  width=""70px"" "&ACQ_NSPK_VISA_Color_all&" >"&ACQ_NSPK_VISA&"</td><td onclick=""ChGraph('ACQ_NSPK_VISA',daysBefore)""  width=""70px"" >"&ACQ_NSPK_VISA_FAIL&"</td><td onclick=""ChGraph('ACQ_NSPK_VISA',daysBefore)""  width=""70px"" "&ACQ_NSPK_VISA_Color&" >"&Round(ACQ_NSPK_VISA_FAIL_PC,3)&"</td><tr>"
 'tr_NSPK_MC 
-  str_tr(2) = "<tr><td width=""100px"" >NSPK_MC</td><td onclick=""ChGraph('ISS_NSPK_MC')"" width=""70px"" "&ISS_NSPK_MC_Color_all&" >"&ISS_NSPK_MC&"</td><td onclick=""ChGraph('ISS_NSPK_MC')"" width=""70px""  >"&ISS_NSPK_MC_FAIL&"</td><td onclick=""ChGraph('ISS_NSPK_MC')"" width=""70px""  "&ISS_NSPK_MC_Color&" >"&Round(ISS_NSPK_MC_FAIL_PC,3)&"</td>"&_
-			 "<td onclick=""ChGraph('ACQ_NSPK_MC')""  width=""70px"" "&ACQ_NSPK_MC_Color_all&" >"&ACQ_NSPK_MC&"</td><td onclick=""ChGraph('ACQ_NSPK_MC')""  width=""70px"" >"&ACQ_NSPK_MC_FAIL&"</td><td onclick=""ChGraph('ACQ_NSPK_MC')"" width=""70px""  "&ACQ_NSPK_MC_Color&" >"&Round(ACQ_NSPK_MC_FAIL_PC,3)&"</td><tr>"	
+  str_tr(2) = "<tr><td width=""100px"" >NSPK_MC</td><td onclick=""ChGraph('ISS_NSPK_MC',daysBefore)"" width=""70px"" "&ISS_NSPK_MC_Color_all&" >"&ISS_NSPK_MC&"</td><td onclick=""ChGraph('ISS_NSPK_MC',daysBefore)"" width=""70px""  >"&ISS_NSPK_MC_FAIL&"</td><td onclick=""ChGraph('ISS_NSPK_MC',daysBefore)"" width=""70px""  "&ISS_NSPK_MC_Color&" >"&Round(ISS_NSPK_MC_FAIL_PC,3)&"</td>"&_
+			 "<td onclick=""ChGraph('ACQ_NSPK_MC',daysBefore)""  width=""70px"" "&ACQ_NSPK_MC_Color_all&" >"&ACQ_NSPK_MC&"</td><td onclick=""ChGraph('ACQ_NSPK_MC',daysBefore)""  width=""70px"" >"&ACQ_NSPK_MC_FAIL&"</td><td onclick=""ChGraph('ACQ_NSPK_MC',daysBefore)"" width=""70px""  "&ACQ_NSPK_MC_Color&" >"&Round(ACQ_NSPK_MC_FAIL_PC,3)&"</td><tr>"	
 'tr_MIR 
-  str_tr(3) = "<tr><td width=""100px"" >MIR</td><td onclick=""ChGraph('ISS_MIR')""  width=""70px"" "&ISS_MIR_Color_all&" >"&ISS_MIR&"</td><td onclick=""ChGraph('ISS_MIR')""  width=""70px"" >"&ISS_MIR_FAIL&"</td><td onclick=""ChGraph('ISS_MIR')"" width=""70px""  "&ISS_MIR_Color&" >"&Round(ISS_MIR_FAIL_PC,3)&"</td>"&_
-		 "<td onclick=""ChGraph('ACQ_MIR')""  width=""70px"" "&ACQ_MIR_Color_all&" >"&ACQ_MIR&"</td><td onclick=""ChGraph('ACQ_MIR')""  width=""70px""  >"&ACQ_MIR_FAIL&"</td><td onclick=""ChGraph('ACQ_MIR')"" width=""70px""  "&ACQ_MIR_Color&" >"&Round(ACQ_MIR_FAIL_PC,3)&"</td><tr>"
+  str_tr(3) = "<tr><td width=""100px"" >MIR</td><td onclick=""ChGraph('ISS_MIR',daysBefore)""  width=""70px"" "&ISS_MIR_Color_all&" >"&ISS_MIR&"</td><td onclick=""ChGraph('ISS_MIR',daysBefore)""  width=""70px"" >"&ISS_MIR_FAIL&"</td><td onclick=""ChGraph('ISS_MIR',daysBefore)"" width=""70px""  "&ISS_MIR_Color&" >"&Round(ISS_MIR_FAIL_PC,3)&"</td>"&_
+		 "<td onclick=""ChGraph('ACQ_MIR',daysBefore)""  width=""70px"" "&ACQ_MIR_Color_all&" >"&ACQ_MIR&"</td><td onclick=""ChGraph('ACQ_MIR',daysBefore)""  width=""70px""  >"&ACQ_MIR_FAIL&"</td><td onclick=""ChGraph('ACQ_MIR',daysBefore)"" width=""70px""  "&ACQ_MIR_Color&" >"&Round(ACQ_MIR_FAIL_PC,3)&"</td><tr>"
 'tr_VISA
-  str_tr(4) = "<tr><td width=""100px"" >VISA</td><td onclick=""ChGraph('ISS_VISA')"" width=""70px"" "&ISS_VISA_Color_all&" >"&ISS_VISA&"</td><td onclick=""ChGraph('ISS_VISA')"" width=""70px"" >"&ISS_VISA_FAIL&"</td><td onclick=""ChGraph('ISS_VISA')"" width=""70px"" "&ISS_VISA_Color&" >"&Round(ISS_VISA_FAIL_PC,3)&"</td>"&_
-		  "<td onclick=""ChGraph('ACQ_VISA')"" width=""70px"" "&ACQ_VISA_Color_all&" >"&ACQ_VISA&"</td><td onclick=""ChGraph('ACQ_VISA')"" width=""70px"" >"&ACQ_VISA_FAIL&"</td><td onclick=""ChGraph('ACQ_VISA')"" width=""70px"" "&ACQ_VISA_Color&" >"&Round(ACQ_VISA_FAIL_PC,3)&"</td><tr>"
+  str_tr(4) = "<tr><td width=""100px"" >VISA</td><td onclick=""ChGraph('ISS_VISA',daysBefore)"" width=""70px"" "&ISS_VISA_Color_all&" >"&ISS_VISA&"</td><td onclick=""ChGraph('ISS_VISA',daysBefore)"" width=""70px"" >"&ISS_VISA_FAIL&"</td><td onclick=""ChGraph('ISS_VISA',daysBefore)"" width=""70px"" "&ISS_VISA_Color&" >"&Round(ISS_VISA_FAIL_PC,3)&"</td>"&_
+		  "<td onclick=""ChGraph('ACQ_VISA',daysBefore)"" width=""70px"" "&ACQ_VISA_Color_all&" >"&ACQ_VISA&"</td><td onclick=""ChGraph('ACQ_VISA',daysBefore)"" width=""70px"" >"&ACQ_VISA_FAIL&"</td><td onclick=""ChGraph('ACQ_VISA',daysBefore)"" width=""70px"" "&ACQ_VISA_Color&" >"&Round(ACQ_VISA_FAIL_PC,3)&"</td><tr>"
 'tr_MC
-  str_tr(5) = "<tr><td width=""100px"" >MC</td><td onclick=""ChGraph('ISS_MC')""  width=""70px"" "&ISS_MC_Color_all&" >"&ISS_MC&"</td><td onclick=""ChGraph('ISS_MC')""  width=""70px"" >"&ISS_MC_FAIL&"</td><td onclick=""ChGraph('ISS_MC')"" width=""70px""  "&ISS_MC_Color&" >"&Round(ISS_MC_FAIL_PC,3)&"</td>"&_
-		"<td onclick=""ChGraph('ACQ_MC')""  width=""70px"" "&ACQ_MC_Color_all&" >"&ACQ_MC&"</td><td onclick=""ChGraph('ACQ_MC')""  width=""70px"" >"&ACQ_MC_FAIL&"</td><td onclick=""ChGraph('ACQ_MC')"" width=""70px""  "&ACQ_MC_Color&" >"&Round(ACQ_MC_FAIL_PC,3)&"</td><tr>"
+  str_tr(5) = "<tr><td width=""100px"" >MC</td><td onclick=""ChGraph('ISS_MC',daysBefore)""  width=""70px"" "&ISS_MC_Color_all&" >"&ISS_MC&"</td><td onclick=""ChGraph('ISS_MC',daysBefore)""  width=""70px"" >"&ISS_MC_FAIL&"</td><td onclick=""ChGraph('ISS_MC',daysBefore)"" width=""70px""  "&ISS_MC_Color&" >"&Round(ISS_MC_FAIL_PC,3)&"</td>"&_
+		"<td onclick=""ChGraph('ACQ_MC',daysBefore)""  width=""70px"" "&ACQ_MC_Color_all&" >"&ACQ_MC&"</td><td onclick=""ChGraph('ACQ_MC',daysBefore)""  width=""70px"" >"&ACQ_MC_FAIL&"</td><td onclick=""ChGraph('ACQ_MC',daysBefore)"" width=""70px""  "&ACQ_MC_Color&" >"&Round(ACQ_MC_FAIL_PC,3)&"</td><tr>"
 
    For j = 1 To 5
          tblISS_ACQ = tblISS_ACQ&str_tr(tbl_tr(j,6))
@@ -1552,10 +1543,10 @@ if T=8 then
          Next
      Next
 
-  str_tr8(1) ="<tr><td width=""100px"">POS</td><td onclick=""ChGraph('All_POS')"" width=""70px"" "&All_POS_Color_all&" >"&All_POS&"</td><td onclick=""ChGraph('All_POS')""  width=""70px"" >"&All_POS_FAIL&"</td><td onclick=""ChGraph('All_POS')""  width=""70px"" "&All_POS_Color&" >"&Round(All_POS_FAIL_PC,3)&"</td><tr>"
-  str_tr8(2)  = "<tr><td width=""100px"" >ATM</td><td onclick=""ChGraph('All_ATM')"" width=""70px""  "&All_ATM_Color_all&" >"&All_ATM&"</td><td onclick=""ChGraph('All_ATM')"" width=""70px"" >"&All_ATM_FAIL&"</td><td onclick=""ChGraph('All_ATM')"" width=""70px"" "&All_ATM_Color&" >"&Round(All_ATM_FAIL_PC,3)&"</td><tr>"
-  str_tr8(3) = "<tr><td width=""100px"" >H2H_RBS</td><td onclick=""ChGraph('All_H2H_RBS')""  width=""70px""  "&All_H2H_RBS_Color_all&" >"&All_H2H_RBS&"</td><td onclick=""ChGraph('All_H2H_RBS')""  width=""70px"" >"&All_H2H_RBS_FAIL&"</td><td onclick=""ChGraph('All_H2H_RBS')""  width=""70px"" "&All_H2H_RBS_Color&" >"&Round(All_H2H_RBS_FAIL_PC,3)&"</td><tr>"
-  str_tr8(4) = "<tr><td width=""100px"" >BPT</td><td onclick=""ChGraph('All_BPT')""  width=""70px""  "&All_BPT_Color_all&" >"&All_BPT&"</td><td onclick=""ChGraph('All_BPT')""  width=""70px"" >"&All_BPT_FAIL&"</td><td onclick=""ChGraph('All_BPT')""  width=""70px"" "&All_BPT_Color&" >"&Round(All_BPT_FAIL_PC,3)&"</td><tr>"
+  str_tr8(1) ="<tr><td width=""100px"">POS</td><td onclick=""ChGraph('All_POS',daysBefore)"" width=""70px"" "&All_POS_Color_all&" >"&All_POS&"</td><td onclick=""ChGraph('All_POS',daysBefore)""  width=""70px"" >"&All_POS_FAIL&"</td><td onclick=""ChGraph('All_POS',daysBefore)""  width=""70px"" "&All_POS_Color&" >"&Round(All_POS_FAIL_PC,3)&"</td><tr>"
+  str_tr8(2)  = "<tr><td width=""100px"" >ATM</td><td onclick=""ChGraph('All_ATM',daysBefore)"" width=""70px""  "&All_ATM_Color_all&" >"&All_ATM&"</td><td onclick=""ChGraph('All_ATM',daysBefore)"" width=""70px"" >"&All_ATM_FAIL&"</td><td onclick=""ChGraph('All_ATM',daysBefore)"" width=""70px"" "&All_ATM_Color&" >"&Round(All_ATM_FAIL_PC,3)&"</td><tr>"
+  str_tr8(3) = "<tr><td width=""100px"" >H2H_RBS</td><td onclick=""ChGraph('All_H2H_RBS',daysBefore)""  width=""70px""  "&All_H2H_RBS_Color_all&" >"&All_H2H_RBS&"</td><td onclick=""ChGraph('All_H2H_RBS',daysBefore)""  width=""70px"" >"&All_H2H_RBS_FAIL&"</td><td onclick=""ChGraph('All_H2H_RBS',daysBefore)""  width=""70px"" "&All_H2H_RBS_Color&" >"&Round(All_H2H_RBS_FAIL_PC,3)&"</td><tr>"
+  str_tr8(4) = "<tr><td width=""100px"" >BPT</td><td onclick=""ChGraph('All_BPT',daysBefore)""  width=""70px""  "&All_BPT_Color_all&" >"&All_BPT&"</td><td onclick=""ChGraph('All_BPT',daysBefore)""  width=""70px"" >"&All_BPT_FAIL&"</td><td onclick=""ChGraph('All_BPT',daysBefore)""  width=""70px"" "&All_BPT_Color&" >"&Round(All_BPT_FAIL_PC,3)&"</td><tr>"
  
    For j = 1 To 4
          'tblISS_ACQ = tblISS_ACQ&str_tr8(tbl_tr8(j,3))
@@ -1719,12 +1710,12 @@ if T=9 then
          Next
      Next
 
-  str_tr9(1) = "<tr><td width=""100px"" >SOA_USB</td><td onclick=""ChGraph('SOA_USB')"" width=""70px""   "&SOA_USB_Color_all&"  >"&SOA_USB&"</td><td onclick=""ChGraph('SOA_USB')"" width=""70px""  >"&SOA_USB_FAIL&"</td><td onclick=""ChGraph('SOA_USB')"" width=""70px""  "&SOA_USB_Color&" >"&Round(SOA_USB_FAIL_PC,3)&"</td><tr>"
-  str_tr9(2) = "<tr><td width=""100px"" >SOA_AGENT</td><td onclick=""ChGraph('SOA_AGENT')"" width=""70px""   "&SOA_AGENT_Color_all&"  >"&SOA_AGENT&"</td><td onclick=""ChGraph('SOA_AGENT')"" width=""70px""  >"&SOA_AGENT_FAIL&"</td><td onclick=""ChGraph('SOA_AGENT')"" width=""70px""  "&SOA_AGENT_Color&" >"&Round(SOA_AGENT_FAIL_PC,3)&"</td><tr>"
-  str_tr9(3) = "<tr><td width=""100px"" >NSPK_VISA_3DS</td><td onclick=""ChGraph('NSPK_VISA')"" width=""70px""  "&NSPK_VISA_Color_all&"  >"&NSPK_VISA&"</td><td onclick=""ChGraph('NSPK_VISA')"" width=""70px"" >"&NSPK_VISA_FAIL&"</td><td onclick=""ChGraph('NSPK_VISA')"" width=""70px"" "&NSPK_VISA_Color&" >"&Round(NSPK_VISA_FAIL_PC,3)&"</td><tr>"
-  str_tr9(4) = "<tr><td width=""100px"" >NSPK_MC_3DS</td><td onclick=""ChGraph('NSPK_MC')""  width=""70px""  "&NSPK_MC_Color_all&" >"&NSPK_MC&"</td><td onclick=""ChGraph('NSPK_MC')"" width=""70px""  >"&NSPK_MC_FAIL&"</td><td onclick=""ChGraph('NSPK_MC')"" width=""70px""  "&NSPK_MC_Color&" >"&Round(NSPK_MC_FAIL_PC,3)&"</td><tr>"
-  str_tr9(5) = "<tr><td width=""100px"" >VISA_3DS</td><td onclick=""ChGraph('VISA')""  width=""70px""  "&VISA_Color_all&" >"&VISA&"</td><td onclick=""ChGraph('VISA')"" width=""70px""  >"&VISA_FAIL&"</td><td onclick=""ChGraph('VISA')""  width=""70px"" "&VISA_Color&" >"&Round(VISA_FAIL_PC,3)&"</td><tr>"
-  str_tr9(6) = "<tr><td width=""100px"" >MC_3DS</td><td onclick=""ChGraph('MC')""  width=""70px""  "&MC_Color_all&" >"&MC&"</td><td onclick=""ChGraph('MC')"" width=""70px""  >"&MC_FAIL&"</td><td onclick=""ChGraph('MC')"" width=""70px""  "&MC_Color&" >"&Round(MC_FAIL_PC,3)&"</td><tr>"
+  str_tr9(1) = "<tr><td width=""100px"" >SOA_USB</td><td onclick=""ChGraph('SOA_USB',daysBefore)"" width=""70px""   "&SOA_USB_Color_all&"  >"&SOA_USB&"</td><td onclick=""ChGraph('SOA_USB',daysBefore)"" width=""70px""  >"&SOA_USB_FAIL&"</td><td onclick=""ChGraph('SOA_USB',daysBefore)"" width=""70px""  "&SOA_USB_Color&" >"&Round(SOA_USB_FAIL_PC,3)&"</td><tr>"
+  str_tr9(2) = "<tr><td width=""100px"" >SOA_AGENT</td><td onclick=""ChGraph('SOA_AGENT',daysBefore)"" width=""70px""   "&SOA_AGENT_Color_all&"  >"&SOA_AGENT&"</td><td onclick=""ChGraph('SOA_AGENT',daysBefore)"" width=""70px""  >"&SOA_AGENT_FAIL&"</td><td onclick=""ChGraph('SOA_AGENT',daysBefore)"" width=""70px""  "&SOA_AGENT_Color&" >"&Round(SOA_AGENT_FAIL_PC,3)&"</td><tr>"
+  str_tr9(3) = "<tr><td width=""100px"" >NSPK_VISA_3DS</td><td onclick=""ChGraph('NSPK_VISA',daysBefore)"" width=""70px""  "&NSPK_VISA_Color_all&"  >"&NSPK_VISA&"</td><td onclick=""ChGraph('NSPK_VISA',daysBefore)"" width=""70px"" >"&NSPK_VISA_FAIL&"</td><td onclick=""ChGraph('NSPK_VISA',daysBefore)"" width=""70px"" "&NSPK_VISA_Color&" >"&Round(NSPK_VISA_FAIL_PC,3)&"</td><tr>"
+  str_tr9(4) = "<tr><td width=""100px"" >NSPK_MC_3DS</td><td onclick=""ChGraph('NSPK_MC',daysBefore)""  width=""70px""  "&NSPK_MC_Color_all&" >"&NSPK_MC&"</td><td onclick=""ChGraph('NSPK_MC',daysBefore)"" width=""70px""  >"&NSPK_MC_FAIL&"</td><td onclick=""ChGraph('NSPK_MC',daysBefore)"" width=""70px""  "&NSPK_MC_Color&" >"&Round(NSPK_MC_FAIL_PC,3)&"</td><tr>"
+  str_tr9(5) = "<tr><td width=""100px"" >VISA_3DS</td><td onclick=""ChGraph('VISA',daysBefore)""  width=""70px""  "&VISA_Color_all&" >"&VISA&"</td><td onclick=""ChGraph('VISA',daysBefore)"" width=""70px""  >"&VISA_FAIL&"</td><td onclick=""ChGraph('VISA',daysBefore)""  width=""70px"" "&VISA_Color&" >"&Round(VISA_FAIL_PC,3)&"</td><tr>"
+  str_tr9(6) = "<tr><td width=""100px"" >MC_3DS</td><td onclick=""ChGraph('MC',daysBefore)""  width=""70px""  "&MC_Color_all&" >"&MC&"</td><td onclick=""ChGraph('MC',daysBefore)"" width=""70px""  >"&MC_FAIL&"</td><td onclick=""ChGraph('MC',daysBefore)"" width=""70px""  "&MC_Color&" >"&Round(MC_FAIL_PC,3)&"</td><tr>"
 
    For j = 1 To 6
          'tblISS_ACQ = tblISS_ACQ&str_tr9(tbl_tr9(j,3))
@@ -3040,10 +3031,12 @@ function SaveChange() {
 			mm=((String(mm).length == 1) ? "0" + mm : mm);
 			var t = dd+"."+mm +"."+d.getFullYear();
 			$('#idDate').html(t);
+			ChTable(jsParam,daysBefore);
 		};
 
 		function ChGraph(param, daysOfset) {
 			ds_taget = 'ChannelISS';
+			jsParam=param;
 			if (param.substring(0,3)=='ISS') {
 				ds_taget = 'ChannelISS';
 			} else {
@@ -3065,9 +3058,16 @@ function SaveChange() {
 			});
 		}
 
-		function ChTable(d) {
-			jQuery.get('dataset.asp', { ds: 'AtmNoLink', prm: 'Table', prm2: d }, function(ds) {
-				$('#idTable1').html(ds);
+		function ChTable(param, daysOfset) {
+			ds_taget = 'ChannelISS';
+			if (param.substring(0,3)=='ISS') {
+				ds_taget = 'ChannelISS';
+			} else {
+				ds_taget = 'ChannelACQ';
+			}
+			$('#idTable1').html='';
+			jQuery.get('dataset.asp', { ds: ds_taget, prm: 'Table', prm2: param, DBefore: daysOfset }, function(res) {
+				$('#idTable1').html(res);
 			});
 		}
 
@@ -3163,31 +3163,36 @@ function SaveChange() {
 <% if T=8 then %>
 		<script type="text/javascript">
 		    var jsParam  = '<% =Request("Param") %>';
+			var daysBefore = 0; //дата отчета относительно текущей даты. Максимум на 14 дней ранее.
+			var daysBeforeLimit = -14;
 			var chartE;
 			
 		function ChangeDate(ofs) {
-			jsDate=jsDate+ofs;
-			if (jsDate>0) jsDate=0;
+			daysBefore=daysBefore+ofs;
+			if (daysBefore>0) daysBefore=0;
+			if (daysBefore<daysBeforeLimit) daysBefore=daysBeforeLimit;
 			if (ofs != 0) {
-				ChGraph(jsBC, jsBN, jsDate)
+				if (jsParam!='') {
+			        ChGraph(jsParam, daysBefore);
+			    } else {
+			        ChGraph('<%=activ_chart %>', daysBefore);
+			    }
 			}
 
 			var d = new Date();
-			d.setDate(d.getDate()+jsDate);
+			d.setDate(d.getDate()+daysBefore);
 			dd=((String(d.getDate()).length == 1) ? "0" + d.getDate() : d.getDate());
 			mm=d.getMonth()+1;
 			mm=((String(mm).length == 1) ? "0" + mm : mm);
 			var t = dd+"."+mm +"."+d.getFullYear();
-			var t2 = d.getFullYear()+"-"+mm+"-"+dd+" "+jsTime;
-			$('#idTable1').html='';
-			ChTable(t2);
 			$('#idDate').html(t);
+			ChTable(jsParam,daysBefore);
 		};
 
-		function ChGraph(param) {
+		function ChGraph(param, daysOfset) {
 			ds_taget = 'ChannelATM';
-				
-			jQuery.get('dataset.asp', { ds: ds_taget, prm: 'Graph', prm2: param }, function(res) {
+			jsParam=param;	
+			jQuery.get('dataset.asp', { ds: ds_taget, prm: 'Graph', prm2: param, DBefore: daysOfset }, function(res) {
 				dts = res.split('~');
 				options.series[0].data.length=0;
 				options.series[1].data.length=0;
@@ -3202,9 +3207,12 @@ function SaveChange() {
 			});
 		}
 
-		function ChTable(d) {
-			jQuery.get('dataset.asp', { ds: 'AtmNoLink', prm: 'Table', prm2: d }, function(ds) {
-				$('#idTable1').html(ds);
+		function ChTable(param, daysOfset) {
+			ds_taget = 'ChannelATM';
+
+			$('#idTable1').html='';
+			jQuery.get('dataset.asp', { ds: ds_taget, prm: 'Table', prm2: param, DBefore: daysOfset }, function(res) {
+				$('#idTable1').html(res);
 			});
 		}
 		 
@@ -3302,31 +3310,36 @@ function SaveChange() {
 <% if T=9 then %>
 		<script type="text/javascript">
 		    var jsParam  = '<% =Request("Param") %>';
+			var daysBefore = 0; //дата отчета относительно текущей даты. Максимум на 14 дней ранее.
+			var daysBeforeLimit = -14;
 			var chartE;
 			
 		function ChangeDate(ofs) {
-			jsDate=jsDate+ofs;
-			if (jsDate>0) jsDate=0;
+			daysBefore=daysBefore+ofs;
+			if (daysBefore>0) daysBefore=0;
+			if (daysBefore<daysBeforeLimit) daysBefore=daysBeforeLimit;
 			if (ofs != 0) {
-				ChGraph(jsBC, jsBN, jsDate)
+				if (jsParam!='') {
+			        ChGraph(jsParam, daysBefore);
+			    } else {
+			        ChGraph('<%=activ_chart %>', daysBefore);
+			    }
 			}
 
 			var d = new Date();
-			d.setDate(d.getDate()+jsDate);
+			d.setDate(d.getDate()+daysBefore);
 			dd=((String(d.getDate()).length == 1) ? "0" + d.getDate() : d.getDate());
 			mm=d.getMonth()+1;
 			mm=((String(mm).length == 1) ? "0" + mm : mm);
 			var t = dd+"."+mm +"."+d.getFullYear();
-			var t2 = d.getFullYear()+"-"+mm+"-"+dd+" "+jsTime;
-			$('#idTable1').html='';
-			ChTable(t2);
 			$('#idDate').html(t);
+			ChTable(jsParam,daysBefore);
 		};
 
-		function ChGraph(param) {
+		function ChGraph(param, daysOfset) {
 			ds_taget = 'Channel3DS';
-				
-			jQuery.get('dataset.asp', { ds: ds_taget, prm: 'Graph', prm2: param }, function(res) {
+			jsParam=param;	
+			jQuery.get('dataset.asp', { ds: ds_taget, prm: 'Graph', prm2: param, DBefore: daysOfset }, function(res) {
 				dts = res.split('~');
 				options.series[0].data.length=0;
 				options.series[1].data.length=0;
@@ -3341,9 +3354,11 @@ function SaveChange() {
 			});
 		}
 
-		function ChTable(d) {
-			jQuery.get('dataset.asp', { ds: 'AtmNoLink', prm: 'Table', prm2: d }, function(ds) {
-				$('#idTable1').html(ds);
+		function ChTable(param, daysOfset) {
+			ds_taget = 'Channel3DS';
+			$('#idTable1').html='';
+			jQuery.get('dataset.asp', { ds: ds_taget, prm: 'Table', prm2: param, DBefore: daysOfset }, function(res) {
+				$('#idTable1').html(res);
 			});
 		}
 		 
@@ -3965,7 +3980,15 @@ if T=8 then
 <table border="0" cellspacing="2" cellpadding="0" style="border: none;">
 <tr>
 <td style="border: none;" >&nbsp;</td>
-<td style="border: none; font-size: 10pt; font-weight: 700; text-align: center;" nowrap><div style="float: left;">Состояние на &nbsp;</div><div id="idDate" style="float: left;"><% =left(DT_FILE, 10) %></div><div id="idTime" style="float: left;">&nbsp;<% =right(DT_FILE, 8) %></div></td>
+
+<td style="border: none; font-size: 10pt; font-weight: 700; text-align: center;" nowrap>
+	<div style="float: left;" onclick="ChangeDate(-1)">&laquo;&nbsp;</div>
+	<div style="float: left;">Состояние на &nbsp;</div>
+	<div id="idDate" style="float: left;"><% =DT_FILE %></div>
+	<!--<div id="idDate" style="float: left;"><% =left(DT_FILE, 10) %></div>
+	<div id="idTime" style="float: left;">&nbsp;<% =right(DT_FILE, 8) %></div>-->
+	<div style="float: left;" onclick="ChangeDate(1)">&nbsp;&raquo;</div>
+</td>
 <td style="border: none;">&nbsp;</td>
 </tr>
 </table>
@@ -4000,10 +4023,18 @@ if T=9 then
 <table border="0" cellspacing="2" cellpadding="0" style="border: none;">
 <tr>
 <td style="border: none;" >&nbsp;</td>
-<td style="border: none; font-size: 10pt; font-weight: 700; text-align: center;" nowrap><div style="float: left;">Состояние на &nbsp;</div><div id="idDate" style="float: left;"><% =left(DT_FILE, 10) %></div><div id="idTime" style="float: left;">&nbsp;<% =right(DT_FILE, 8) %></div></td>
+<td style="border: none; font-size: 10pt; font-weight: 700; text-align: center;" nowrap>
+	<div style="float: left;" onclick="ChangeDate(-1)">&laquo;&nbsp;</div>
+	<div style="float: left;">Состояние на &nbsp;</div>
+	<div id="idDate" style="float: left;"><% =DT_FILE %></div>
+	<!--<div id="idDate" style="float: left;"><% =left(DT_FILE, 10) %></div>
+	<div id="idTime" style="float: left;">&nbsp;<% =right(DT_FILE, 8) %></div>-->
+	<div style="float: left;" onclick="ChangeDate(1)">&nbsp;&raquo;</div>
+</td>
 <td style="border: none;">&nbsp;</td>
 </tr>
 </table>
+
 </div> 
 <div align="center" style="margin-top: 8px">
 	<div id="containerE" style="width: 100%; height: 260px; margin: 0 auto"></div>

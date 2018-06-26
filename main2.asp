@@ -273,8 +273,54 @@ end if
 Rs.Close
 
 
+dim series(), CID()
 Table2=""
-Rs.Open "SELECT * FROM vw_Messages ORDER BY 1", Conn
+CID_list=""
+'Rs.Open "SELECT * FROM vw_Messages ORDER BY 1", Conn
+t2FontSize = 24
+t2NamesCount = 6
+Rs.Open "SELECT count([Name]) namescount FROM Messages_Category ", Conn
+if not Rs.Eof then
+  if (Rs.Fields("namescount")<7) then
+		ReDim series(6)
+		ReDim CID(6)
+	elseif (Rs.Fields("namescount")=7) then
+		t2FontSize = 20
+		t2NamesCount = 7
+		ReDim series(7)
+		ReDim CID(7)
+	elseif (Rs.Fields("namescount")>=8 ) then
+		t2FontSize = 16
+		t2NamesCount = 8
+		ReDim series(8)
+		ReDim CID(8)
+	end if
+end if
+Rs.Close
+
+i = 1
+Rs.Open "SELECT  top 8 [Name] FROM Messages_Category order by [Name]", Conn
+if not Rs.Eof then
+  do while not Rs.Eof
+		if ((t2NamesCount-i)>=0) then
+			CID(t2NamesCount-i) = Rs.Fields("Name")
+			series(t2NamesCount-i)=""
+		end if
+		if CID_list<>"" then
+			CID_list=CID_list&",'"&Rs.Fields("Name")&"'"
+		else 
+			CID_list=CID_list&"'"&Rs.Fields("Name")&"'"
+		end if 
+		i=i+1
+		Rs.MoveNext
+  loop
+end if
+Rs.Close
+
+
+SQL_="SELECT top 8 C.[Name], T.LastState FROM Messages_Category AS C LEFT OUTER JOIN (SELECT CategoryCode, MAX(LastState) AS LastState "
+SQL_=SQL_&" FROM  DBO.Messages_Type GROUP BY CategoryCode) AS T ON C.CategoryCode = T.CategoryCode order by C.[Name]"
+Rs.Open SQL_, Conn
 MaxState=0
 if not Rs.Eof then
   do while not Rs.Eof
@@ -282,7 +328,7 @@ if not Rs.Eof then
 	if Rs.Fields(1)=1 then cl="color: "&clWarning&"; " end if
 	if Rs.Fields(1)=2 then cl="color: "&clError&"; " end if
 	if MaxState<Rs.Fields(1) then MaxState=Rs.Fields(1) end if
-    Table2=Table2&"<tr><td class='A' style='"&cl&"font-size: 24pt; font-weight: 700;' nowrap>"&Rs.Fields(0)&"</td></tr>"
+    Table2=Table2&"<tr><td class='A' style='"&cl&"font-size: "&t2FontSize&"pt; font-weight: 700;' nowrap>"&Rs.Fields(0)&"</td></tr>"
     Rs.MoveNext
   loop
 end if
@@ -292,19 +338,17 @@ if MaxState=2 then Color6=clError end if
 Rs.Close
 
 'SQL_="SELECT [DT], [TagID], [Value], CASE [TagID] WHEN 'AGENT' THEN 5.5 WHEN 'CLOSE' THEN 4.5 WHEN 'IR ACCEPT' THEN 3.5 WHEN 'IBSO' THEN 2.5 WHEN 'OTHER' THEN 1.5 WHEN 'WATCH' THEN 0.5 ELSE 0 END AS Y FROM Tags_History WHERE (DT > GETDATE()-1.0/6) AND (TagID not like 'Main%') AND (TagID not like '5%') ORDER BY TagID, DT"
-SQL_="SELECT dateAdd(ss,-1*DATEPART(ss, DT),dateAdd(ms,-1*DATEPART(ms, DT),dateAdd(month,-1,DT))) AS DT , [TagID], [Value], CASE [TagID] WHEN 'AGENT' THEN 5.5 WHEN 'CLOSE' THEN 4.5 WHEN 'IBSO' THEN 3.5 WHEN 'IR ACCEPT' THEN 2.5 WHEN 'OTHER' THEN 1.5 WHEN 'WATCH' THEN 0.5 ELSE 0 END AS Y FROM Tags_History WHERE (DT > GETDATE()-1.0/6) AND (TagID not like 'Main%') AND (TagID not like '5%') ORDER BY TagID, DT"
+SQL_="SELECT dateAdd(ss,-1*DATEPART(ss, DT),dateAdd(ms,-1*DATEPART(ms, DT),dateAdd(month,-1,DT))) AS DT , "
+SQL_=SQL_&" [Value], [TagID] FROM Tags_History WHERE (DT > GETDATE()-1.0/6) AND (TagID not like 'Main%') "
+SQL_=SQL_&" AND (TagID in ("&CID_list&") ) "
+SQL_=SQL_&" AND (TagID not like '5%') ORDER BY TagID, DT"
 Rs.Open SQL_, Conn
 LastID=""
-dim series(6), CID(6)
-for i=0 to 5
-  series(i)=""
-next
-CID(5)="AGENT"
-CID(4)="CLOSE"
-CID(2)="IR ACCEPT"
-CID(3)="DELAY FILES"
-CID(1)="OTHER"
-CID(0)="WATCH"
+
+'dim series(6), CID(6)
+'ReDim series(t2NamesCount)
+'ReDim CID(t2NamesCount)
+
 i=-1
 if not Rs.Eof then
 do while not Rs.Eof
@@ -317,7 +361,18 @@ do while not Rs.Eof
       case "1": m="marker: {fillColor: '#FF0000', lineColor: '#FFFF99', radius: 6}, "
       case "2": m="marker: {fillColor: '#FF0000', lineColor: '#FF0000', radius: 6}, "
     end select
-	v=Rs.Fields("Y")
+
+		y=-1
+		for j=0 to t2NamesCount
+		  if (CID(j)=Rs.Fields("TagID")) then y=j end if
+		next
+
+		if (y>0) then
+			y=y+0.5
+		end if
+
+	'v=Rs.Fields("Y")
+	v=cStr(y)
 	v=replace(v, ",", ".")
 	series(i)=series(i)&vbCrLf&"{color: null, "&m&"x: Date.UTC("&DateTimeFormat(Rs.Fields("DT"), "yyyy, mm, dd, hh, nn")&"), y: "&v&"},"
   end if
@@ -341,6 +396,12 @@ else
 end if
 Rs.Close
 
+if (AllSeries="") then
+	AllSeries = AllSeries & ", series: [{ name: '00', type: 'scatter', visible: false, data: [ "
+	AllSeries = AllSeries & " {color: null, marker: {fillColor: '#FF0000', lineColor: '#FF0000', radius: 2}, "
+ 	AllSeries = AllSeries & " x: Date.UTC("&DateTimeFormat(Now, "yyyy, mm, dd, hh, nn")&"), y: -1 } ]}] "
+end if
+
 
 %>
 <!DOCTYPE HTML>
@@ -348,7 +409,7 @@ Rs.Close
 <head>
 		<meta http-equiv="Content-Type" content="text/html; charset=windows-1251">
 		<meta http-equiv="X-UA-Compatible" content="ie=edge">
-		<meta content="60; url=http://ufa-qos01ow/vsp/main2.asp" http-equiv=refresh>
+		<!-- <meta content="60; url=http://ufa-qos01ow/vsp/main2.asp" http-equiv=refresh> -->
 		<!-- 1. Add these JavaScript inclusions in the head of your page -->
 		<script type="text/javascript" src="js/jquery.min.js"></script>
 		<script type="text/javascript" src="js/highstock.js"></script>
@@ -481,17 +542,16 @@ Rs.Close
 					},
 					yAxis: {
 					    min: 0,
-					    max: 6,
+					    max: <% =t2NamesCount %>,
 						tickInterval: 1,
 						labels: { formatter: function() 
 								  {
 								    var t;
-									if (this.value == 0) {t='<% =CID(0) %>'};
-									if (this.value == 1) {t='<% =CID(1) %>'};
-									if (this.value == 2) {t='<% =CID(2) %>'};
-									if (this.value == 3) {t='<% =CID(3) %>'};
-									if (this.value == 4) {t='<% =CID(4) %>'};
-									if (this.value == 5) {t='<% =CID(5) %>'};
+<%
+										for j=0 to t2NamesCount
+											Response.Write "if (this.value == "&j&") {t='"&CID(j)&"'};"
+										next
+%>
 									return t;
 								  },
 								style: {color: '#FFFFFF'},
@@ -613,35 +673,52 @@ Rs.Close
 					series: [{
 						name: 'доо'
 <%
-Rs.Open "SELECT dateadd(month,-1,DT) DT, TagID, [Value] FROM Tags_History WHERE (TagID='5198') AND (DT > GETDATE()-1.0/12) ORDER BY DT", Conn
+Rs.Open "SELECT DT, TagID, [Value] FROM Tags_History WHERE (TagID='5198') AND (DT > GETDATE()-1.0/12) ORDER BY DT", Conn
 																																			
 if not Rs.Eof then
+  temp_DT=datepart("yyyy",Rs.Fields("DT"))&", "&(datepart("m",Rs.Fields("DT"))-1)&", "&datepart("d",Rs.Fields("DT"))&", "&datepart("h",Rs.Fields("DT"))&", "&datepart("n",Rs.Fields("DT"))
   Response.Write(", data: [")
-  Response.Write("[Date.UTC("&DateTimeFormat(Rs.Fields("DT"), "yyyy, mm, dd, hh, nn")&"), "&Rs.Fields("Value")&"]")
+  Response.Write("[Date.UTC("&temp_DT&"), "&Rs.Fields("Value")&"]")
   Rs.MoveNext
   do while not Rs.Eof
-    Response.Write(","&vbCrLf&"[Date.UTC("&DateTimeFormat(Rs.Fields("DT"), "yyyy, mm, dd, hh, nn")&"), "&Rs.Fields("Value")&"]")
+	temp_DT=datepart("yyyy",Rs.Fields("DT"))&", "&(datepart("m",Rs.Fields("DT"))-1)&", "&datepart("d",Rs.Fields("DT"))&", "&datepart("h",Rs.Fields("DT"))&", "&datepart("n",Rs.Fields("DT"))
+    Response.Write(","&vbCrLf&"[Date.UTC("&temp_DT&"), "&Rs.Fields("Value")&"]")
     Rs.MoveNext
   loop
   Response.Write("]"&vbCrLf)
+else
+	twoHoursBefore = DateAdd("h",-2,Now)
+	temp_DT=datepart("yyyy",twoHoursBefore)&", "&(datepart("m",twoHoursBefore)-1)&", "&datepart("d",twoHoursBefore)&", "&datepart("h",twoHoursBefore)&", "&datepart("n",twoHoursBefore)
+	DPPSeries = ", type: 'scatter', data: [ "
+	DPPSeries = DPPSeries & " {color: null, marker: {fillColor: '#FF0000', lineColor: '#FF0000', radius: 2}, "
+ 	DPPSeries = DPPSeries & " x: Date.UTC("&temp_DT&"), y: -1 } ] "
+	Response.Write DPPSeries
 end if
 Rs.Close
 %>
 					}, {
 						name: 'ряо'
 <%
-Rs.Open "SELECT dateadd(month,-1,DT) DT, TagID, [Value] FROM Tags_History WHERE (TagID='5349') AND (DT > GETDATE()-1.0/12) ORDER BY DT", Conn
+Rs.Open "SELECT DT, TagID, [Value] FROM Tags_History WHERE (TagID='5349') AND (DT > GETDATE()-1.0/12) ORDER BY DT", Conn
 if not Rs.Eof then
+  temp_DT=datepart("yyyy",Rs.Fields("DT"))&", "&(datepart("m",Rs.Fields("DT"))-1)&", "&datepart("d",Rs.Fields("DT"))&", "&datepart("h",Rs.Fields("DT"))&", "&datepart("n",Rs.Fields("DT"))
   Response.Write(", data: [")
-  Response.Write("[Date.UTC("&DateTimeFormat(Rs.Fields("DT"), "yyyy, mm, dd, hh, nn")&"), "&Rs.Fields("Value")&"]")
+  Response.Write("[Date.UTC("&temp_DT&"), "&Rs.Fields("Value")&"]")
   Rs.MoveNext
   do while not Rs.Eof
-    Response.Write(","&vbCrLf&"[Date.UTC("&DateTimeFormat(Rs.Fields("DT"), "yyyy, mm, dd, hh, nn")&"), "&Rs.Fields("Value")&"]")
+	temp_DT=datepart("yyyy",Rs.Fields("DT"))&", "&(datepart("m",Rs.Fields("DT"))-1)&", "&datepart("d",Rs.Fields("DT"))&", "&datepart("h",Rs.Fields("DT"))&", "&datepart("n",Rs.Fields("DT"))
+    Response.Write(","&vbCrLf&"[Date.UTC("&temp_DT&"), "&Rs.Fields("Value")&"]")
     Rs.MoveNext
   loop
   Response.Write("]"&vbCrLf)
 else
-  Response.Write(", data: [{x: Date.UTC("&DateTimeFormat(Int(Now), "yyyy, mm, dd")&"), y: 0}]")
+ ' Response.Write(", data: [{x: Date.UTC("&DateTimeFormat(Int(Now), "yyyy, mm, dd")&"), y: 0}]")
+	twoHoursBefore = DateAdd("h",-2,Now)
+	temp_DT=datepart("yyyy",twoHoursBefore)&", "&(datepart("m",twoHoursBefore)-1)&", "&datepart("d",twoHoursBefore)&", "&datepart("h",twoHoursBefore)&", "&datepart("n",twoHoursBefore)
+	TSPSeries = ", type: 'scatter', data: [ "
+	TSPSeries = TSPSeries & " {color: null, marker: {fillColor: '#FF0000', lineColor: '#FF0000', radius: 2}, "
+ 	TSPSeries = TSPSeries & " x: Date.UTC("&temp_DT&"), y: -1 } ] "
+	Response.Write TSPSeries
 end if
 Rs.Close
 %>
@@ -709,7 +786,7 @@ TD.Txt {
 		<td style="border: none;" width="640px">
 		  <div id="containerAA" style="width: 640px; height: 320px; margin: 0 auto; font-size: 28pt;">
 		    <table border="0" cellspacing="0" cellpadding="0" height="100%" width="640px">
-			<% Response.Write(Table) %>
+			<% Response.Write(Table) %>			
  		    </table>
 		  </div></td>
 		<td style="border: none;" width="940px"><div id="container5"  style="width: 940px; height: 320px; margin: 0 auto"></div></td>
@@ -720,6 +797,7 @@ TD.Txt {
 		  <div id="containerAA" style="width: 640px; height: 320px; margin: 0 auto; font-size: 28pt;">
 		    <table border="0" cellspacing="2" cellpadding="0" height="100%" width="640px">
 			<% Response.Write(Table2) %>
+
  		    </table>
 		  </div></td>
 		<td style="border: none;" width="940px"><div id="container6"  style="width: 940px; height: 320px; margin: 0 auto"></div></td>

@@ -339,11 +339,21 @@ end function
 	END IF
 	RS.CLOSE	
 	
+	
 	if ((VISA_3DS = clWarning)or(NSPK_VISA_3DS = clWarning)or(MC_3DS = clWarning)or(NSPK_MC_3DS = clWarning)) then
 		All_3DS_Color = clWarning
 	end if
 	
 	if ((VISA_3DS = clError)or(NSPK_VISA_3DS = clError)or(MC_3DS = clError)or(NSPK_MC_3DS = clError)) then
+		All_3DS_Color = clError
+	end if 
+	
+	
+	if ((SOA_USB = clWarning)or(SOA_AGENT = clWarning)) then
+		All_SOA_Color = clWarning
+	end if
+	
+	if ((SOA_USB = clError)or(SOA_AGENT = clError)) then
 		All_SOA_Color = clError
 	end if 
 
@@ -905,8 +915,10 @@ CurrentTimeLabel = DateTimeFormat(DateAdd("m", -1, cDate(LastFileTimeFull)), "hh
 <html>
 <head>
 		<meta http-equiv="Content-Type" content="text/html; charset=windows-1251">
+                <meta http-equiv="X-UA-Compatible" content="ie=edge">
 
-		<meta http-equiv='refresh' content='60; url=http://ufa-qos01ow/vsp/main4.asp'>
+               <meta http-equiv='refresh' content='60; url=http://ufa-qos01ow/vsp/main4.asp'>
+
 		<!-- 1. Add these JavaScript inclusions in the head of your page -->
 		<script type="text/javascript" src="js/jquery.min.js"></script>
 		<script type="text/javascript" src="js/highcharts.js"></script>

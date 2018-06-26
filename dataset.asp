@@ -925,6 +925,7 @@ end if
 '-------START: Channel Groups------------------------------------------------------------------------
 '----------------------------------------------------------------------------------------------------
 if ds="ChannelISS" then
+if prm= "Graph" then
 
 	Series = ""
 	Series_FAIL = ""
@@ -973,10 +974,14 @@ if ds="ChannelISS" then
 	Rs.Close
 	
 	Response.Write(Series&"~"&Series_FAIL)
-	
+
+elseif prm= "Table" then
+	UpdateChannelGroupsTable ds, Request("DBefore")
+end if
 end if
 
 if ds="ChannelACQ" then
+if prm= "Graph" then
 
 	Series = ""
 	Series_FAIL = ""
@@ -1016,12 +1021,15 @@ if ds="ChannelACQ" then
 	Rs.Close
 	
 	Response.Write(Series&"~"&Series_FAIL)
-	
+elseif prm= "Table" then
+	UpdateChannelGroupsTable ds, Request("DBefore")
+end if
 end if
 
 '----------------------------------------------------------------------------------------------------
 
 if ds="ChannelATM" then
+if prm= "Graph" then
 
 	Series = ""
 	Series_FAIL = ""
@@ -1058,13 +1066,15 @@ if ds="ChannelATM" then
 	Rs.Close
 	
 	Response.Write(Series&"~"&Series_FAIL)
-	
+elseif prm= "Table" then
+	UpdateChannelGroupsTable ds, Request("DBefore")
+end if
 end if
 
 '----------------------------------------------------------------------------------------------------
 
 if ds="Channel3DS" then
-
+if prm= "Graph" then
 	Series = ""
 	Series_FAIL = ""
 	RequestParam = ""
@@ -1104,11 +1114,934 @@ if ds="Channel3DS" then
 	Rs.Close
 	
 	Response.Write(Series&"~"&Series_FAIL)
-	
+elseif prm= "Table" then
+	UpdateChannelGroupsTable ds, Request("DBefore")
+end if
 end if
 '----------------------------------------------------------------------------------------------------
 '-------END: Channel Groups--------------------------------------------------------------------------
 '----------------------------------------------------------------------------------------------------
+
+dim warnings(20,7)
+
+if ((ds="ChannelISS") or  (ds="ChannelACQ") or  (ds="ChannelATM")  or  (ds="Channel3DS")) then
+		' Заполнение Warings
+		i = 0
+		sqlstr = "SELECT Channel_Group, ISNULL(Warning_Count,0) Warning_Count, ISNULL(Error_Count,0) Error_Count, ISNULL(Min_Count,0) Min_Count, ISNULL(Limit_Count,0) Limit_Count,  ISNULL(Lowactivity_start,0) Lowactivity_start, ISNULL(Lowactivity_end,0) Lowactivity_end  FROM  Channel_Config"
+		Rs.OPEN sqlstr, CONN
+		if not RS.EOF then
+		do while (not RS.EOF)
+			warnings(i,0)=Rs.Fields("Channel_Group") ' Channel_Group
+			warnings(i,1)=Rs.Fields("Warning_Count")	' Warning_Count
+			warnings(i,2)=Rs.Fields("Error_Count")	' Error_Count
+			warnings(i,3)=Rs.Fields("Min_Count")	' Min_Count
+					warnings(i,4)=Rs.Fields("Limit_Count")	' Limit_Count
+					warnings(i,5)=Rs.Fields("Lowactivity_start")	' Lowactivity_start
+					warnings(i,6)=Rs.Fields("Lowactivity_end")	' Lowactivity_end
+			i = i+1
+			Rs.MoveNext
+		loop
+		end if
+		RS.CLOSE
+
+end if
+
+		function checkWarning(paramName, failCount, totalCount, minutes_val)
+			res = "" 'clWarning clError
+			if (totalCount>0) then
+				failCount = (failCount*100)/totalCount ' проверяем процент сбойных
+				for j=0 to UBound(warnings)
+					if (warnings(j,0)=paramName) then
+						if ((warnings(j,2)>0)and(totalCount>warnings(j,3))and(failCount>warnings(j,2))) then
+							res = clError
+						elseif ((warnings(j,1)>0)and(totalCount>warnings(j,3))and(failCount>warnings(j,1))) then
+							res = clWarning
+						end if
+
+										'if (warnings(j,6)>0) then
+											'  if (((minutes_val<warnings(j,5))or(minutes_val>warnings(j,6)))and(totalCount<warnings(j,4))) then
+											'      res = clError
+											'  end if
+										'end if
+
+						checkWarning = res
+					end if
+				next
+			end if
+			checkWarning = res
+		end function
+
+		function checkWarning_all(paramName, failCount, totalCount, minutes_val)
+			res = "" 'clWarning clError
+			if (totalCount>0) then
+				'failCount = (failCount*100)/totalCount ' проверяем процент сбойных
+				for j=0 to UBound(warnings)
+					if (warnings(j,0)=paramName) then
+
+										if (warnings(j,6)>0) then
+												if (((minutes_val<warnings(j,5))or(minutes_val>warnings(j,6)))and(totalCount<warnings(j,4))) then
+														res = clError
+												end if
+										end if
+
+						checkWarning_all = res
+					end if
+				next
+			end if
+			checkWarning_all = res
+		end function
+
+
+'----------------------------------------------------------------------------------------------------
+'-------Start: Channel Groups Table------------------------------------------------------------------
+'----------------------------------------------------------------------------------------------------
+function UpdateChannelGroupsTable(ChName,DOfset)
+		DBefore = 0
+		if DOfset<>"" then
+			DBefore = DOfset
+		else
+			DBefore = 0
+		end if
+
+		if ((ChName="ChannelISS") or  (ChName="ChannelACQ")) then
+'------------T=7----------------------------------------------------------------------------------------
+				ISS_VISA = 0
+				ISS_VISA_FAIL = 0
+				ISS_VISA_FAIL_PC = 0
+				ACQ_VISA = 0 
+				ACQ_VISA_FAIL = 0
+				ACQ_VISA_FAIL_PC = 0
+				ISS_MC = 0
+				ISS_MC_FAIL = 0
+				ISS_MC_FAIL_PC = 0
+				ACQ_MC = 0
+				ACQ_MC_FAIL = 0
+				ACQ_MC_FAIL_PC = 0
+				ISS_NSPK_VISA = 0
+				ISS_NSPK_VISA_FAIL = 0
+				ISS_NSPK_VISA_FAIL_PC = 0
+				ACQ_NSPK_VISA = 0
+				ACQ_NSPK_VISA_FAIL = 0
+				ACQ_NSPK_VISA_FAIL_PC = 0
+				ISS_NSPK_MC = 0
+				ISS_NSPK_MC_FAIL = 0
+				ISS_NSPK_MC_FAIL_PC = 0
+				ACQ_NSPK_MC = 0
+				ACQ_NSPK_MC_FAIL = 0
+				ACQ_NSPK_MC_FAIL_PC = 0
+				ISS_MIR = 0
+				ISS_MIR_FAIL = 0
+				ISS_MIR_FAIL_PC = 0
+				ACQ_MIR = 0
+				ACQ_MIR_FAIL = 0
+				ACQ_MIR_FAIL_PC = 0
+				
+				ISS_VISA_Color = ""
+				ACQ_VISA_Color = "" 
+				ISS_MC_Color = ""
+				ACQ_MC_Color = ""
+				ISS_NSPK_VISA_Color = ""
+				ACQ_NSPK_VISA_Color = ""
+				ISS_NSPK_MC_Color = ""
+				ACQ_NSPK_MC_Color = ""
+				ISS_MIR_Color = ""
+				ACQ_MIR_Color = ""
+
+				ISS_VISA_Color_all = ""
+				ACQ_VISA_Color_all = "" 
+				ISS_MC_Color_all = ""
+				ACQ_MC_Color_all = ""
+				ISS_NSPK_VISA_Color_all = ""
+				ACQ_NSPK_VISA_Color_all = ""
+				ISS_NSPK_MC_Color_all = ""
+				ACQ_NSPK_MC_Color_all = ""
+				ISS_MIR_Color_all = ""
+				ACQ_MIR_Color_all = ""
+				
+				sqlstr = "SELECT DATEADD(MONTH,-1,[TIME]) [TIME],SUM(OPERATION) OPERATION,SUM(OPERATION_FAIL) OPERATION_FAIL, SOURCE_CHANNEL  "
+					sqlstr = sqlstr&" ,DATEPART(HOUR,[TIME])*60+DATEPART(MINUTE,[TIME]) timeinminutes FROM LOG_VO "
+				'sqlstr = sqlstr&" WHERE [TIME]=(select top 1 [TIME] from LOG_VO order by [TIME] desc) "
+				sqlstr = sqlstr&" WHERE [TIME]>=convert(datetime,floor(convert(float,DATEADD(DAY,"&DBefore&",GETDATE()) ))) "
+				sqlstr = sqlstr&" and [TIME]<convert(datetime,floor(convert(float, DATEADD(DAY,"&DBefore&"+1,GETDATE()) ))) "
+				sqlstr = sqlstr&" GROUP BY [TIME],SOURCE_CHANNEL"
+				RS.OPEN sqlstr, CONN
+				IF NOT RS.EOF THEN
+				DO WHILE (NOT RS.EOF)
+					if (Rs.Fields("SOURCE_CHANNEL")="VISA") then
+						ISS_VISA = Rs.Fields("OPERATION")
+						ISS_VISA_Color = checkWarning("VISA_ISS", Rs.Fields("OPERATION_FAIL"), ISS_VISA, Rs.Fields("timeinminutes"))
+									ISS_VISA_Color_all = checkWarning_all("VISA_ISS", Rs.Fields("OPERATION_FAIL"), ISS_VISA, Rs.Fields("timeinminutes"))
+						ISS_VISA_FAIL = Rs.Fields("OPERATION_FAIL")
+						if (ISS_VISA>0) then
+							ISS_VISA_FAIL_PC=(ISS_VISA_FAIL*100)/ISS_VISA
+						end if
+					elseif (Rs.Fields("SOURCE_CHANNEL")="MasterCard") then
+						ISS_MC = Rs.Fields("OPERATION")
+						ISS_MC_Color = checkWarning("MC_ISS", Rs.Fields("OPERATION_FAIL"), ISS_MC, Rs.Fields("timeinminutes"))
+									ISS_MC_Color_all = checkWarning_all("MC_ISS", Rs.Fields("OPERATION_FAIL"), ISS_MC, Rs.Fields("timeinminutes"))
+						ISS_MC_FAIL = Rs.Fields("OPERATION_FAIL")
+						if (ISS_MC>0) then
+							ISS_MC_FAIL_PC=(ISS_MC_FAIL*100)/ISS_MC
+						end if
+					elseif (Rs.Fields("SOURCE_CHANNEL")="NSPK_VISA") then
+						ISS_NSPK_VISA = Rs.Fields("OPERATION")
+						ISS_NSPK_VISA_Color = checkWarning("NSPK_VISA_ISS", Rs.Fields("OPERATION_FAIL"), ISS_NSPK_VISA, Rs.Fields("timeinminutes"))
+									ISS_NSPK_VISA_Color_all = checkWarning_all("NSPK_VISA_ISS", Rs.Fields("OPERATION_FAIL"), ISS_NSPK_VISA, Rs.Fields("timeinminutes"))
+						ISS_NSPK_VISA_FAIL = Rs.Fields("OPERATION_FAIL")
+						if (ISS_NSPK_VISA>0) then
+							ISS_NSPK_VISA_FAIL_PC=(ISS_NSPK_VISA_FAIL*100)/ISS_NSPK_VISA
+						end if
+					elseif (Rs.Fields("SOURCE_CHANNEL")="NSPK_MasterCard") then
+						ISS_NSPK_MC = Rs.Fields("OPERATION")
+						ISS_NSPK_MC_Color = checkWarning("NSPK_MC_ISS", Rs.Fields("OPERATION_FAIL"), ISS_NSPK_MC, Rs.Fields("timeinminutes"))
+									ISS_NSPK_MC_Color_all = checkWarning_all("NSPK_MC_ISS", Rs.Fields("OPERATION_FAIL"), ISS_NSPK_MC, Rs.Fields("timeinminutes"))
+						ISS_NSPK_MC_FAIL = Rs.Fields("OPERATION_FAIL")
+						if (ISS_NSPK_MC>0) then
+							ISS_NSPK_MC_FAIL_PC=(ISS_NSPK_MC_FAIL*100)/ISS_NSPK_MC
+						end if
+					elseif (Rs.Fields("SOURCE_CHANNEL")="NSPK MIR") then
+						ISS_MIR = Rs.Fields("OPERATION")
+						ISS_MIR_Color = checkWarning("MIR_ISS", Rs.Fields("OPERATION_FAIL"), ISS_MIR, Rs.Fields("timeinminutes"))
+									ISS_MIR_Color_all = checkWarning_all("MIR_ISS", Rs.Fields("OPERATION_FAIL"), ISS_MIR, Rs.Fields("timeinminutes"))
+						ISS_MIR_FAIL = Rs.Fields("OPERATION_FAIL")
+						if (ISS_MIR>0) then
+							ISS_MIR_FAIL_PC=(ISS_MIR_FAIL*100)/ISS_MIR
+						end if
+					end if
+					
+					Rs.MoveNext
+				LOOP
+				END IF
+				RS.CLOSE
+				
+				sqlstr = "SELECT DATEADD(MONTH,-1,[TIME]) [TIME],SUM(OPERATION) OPERATION,SUM(OPERATION_FAIL) OPERATION_FAIL, case when TARGET_CHANNEL='NSPK_VISA SMS' then 'NSPK_VISA'  when TARGET_CHANNEL='VISA SMS' then 'VISA'  else TARGET_CHANNEL end as TARGET_CHANNEL "
+				sqlstr = sqlstr&" ,DATEPART(HOUR,[TIME])*60+DATEPART(MINUTE,[TIME]) timeinminutes FROM LOG_VO "
+				'sqlstr = sqlstr&" WHERE [TIME]=(select top 1 [TIME] from LOG_VO order by [TIME] desc) "
+				sqlstr = sqlstr&" WHERE [TIME]>=convert(datetime,floor(convert(float,DATEADD(DAY,"&DBefore&",GETDATE()) ))) "
+				sqlstr = sqlstr&" and [TIME]<convert(datetime,floor(convert(float, DATEADD(DAY,"&DBefore&"+1,GETDATE()) ))) "
+				sqlstr = sqlstr&" GROUP BY [TIME], case when TARGET_CHANNEL='NSPK_VISA SMS' then 'NSPK_VISA'  when TARGET_CHANNEL='VISA SMS' then 'VISA'  else TARGET_CHANNEL end "
+				Rs.OPEN sqlstr, CONN
+				If not Rs.EOF then
+				do while (not Rs.EOF)
+					if ((Rs.Fields("TARGET_CHANNEL")="VISA")or(Rs.Fields("TARGET_CHANNEL")="VISA SMS")) then
+						ACQ_VISA = Rs.Fields("OPERATION")
+						ACQ_VISA_Color = checkWarning("VISA_ACQ", Rs.Fields("OPERATION_FAIL"), ACQ_VISA, Rs.Fields("timeinminutes"))
+									ACQ_VISA_Color_all = checkWarning_all("VISA_ACQ", Rs.Fields("OPERATION_FAIL"), ACQ_VISA, Rs.Fields("timeinminutes"))
+						ACQ_VISA_FAIL = Rs.Fields("OPERATION_FAIL")
+						if (ACQ_VISA>0) then
+							ACQ_VISA_FAIL_PC=(ACQ_VISA_FAIL*100)/ACQ_VISA
+						end if
+					elseif (Rs.Fields("TARGET_CHANNEL")="MasterCard") then
+						ACQ_MC = Rs.Fields("OPERATION")
+						ACQ_MC_Color = checkWarning("MC_ACQ", Rs.Fields("OPERATION_FAIL"), ACQ_MC, Rs.Fields("timeinminutes"))
+						ACQ_MC_Color_all = checkWarning_all("MC_ACQ", Rs.Fields("OPERATION_FAIL"), ACQ_MC, Rs.Fields("timeinminutes"))
+						ACQ_MC_FAIL = Rs.Fields("OPERATION_FAIL")
+						if (ACQ_MC>0) then
+							ACQ_MC_FAIL_PC=(ACQ_MC_FAIL*100)/ACQ_MC
+						end if
+					elseif ((Rs.Fields("TARGET_CHANNEL")="NSPK_VISA")or(Rs.Fields("TARGET_CHANNEL")="NSPK_VISA SMS")) then
+						ACQ_NSPK_VISA = Rs.Fields("OPERATION")
+						ACQ_NSPK_VISA_Color = checkWarning("NSPK_VISA_ACQ", Rs.Fields("OPERATION_FAIL"), ACQ_NSPK_VISA, Rs.Fields("timeinminutes"))
+						ACQ_NSPK_VISA_Color_all = checkWarning_all("NSPK_VISA_ACQ", Rs.Fields("OPERATION_FAIL"), ACQ_NSPK_VISA, Rs.Fields("timeinminutes"))
+						ACQ_NSPK_VISA_FAIL = Rs.Fields("OPERATION_FAIL")
+						if (ACQ_NSPK_VISA>0) then
+							ACQ_NSPK_VISA_FAIL_PC=(ACQ_NSPK_VISA_FAIL*100)/ACQ_NSPK_VISA
+						end if
+					elseif (Rs.Fields("TARGET_CHANNEL")="NSPK_MasterCard") then
+						ACQ_NSPK_MC = Rs.Fields("OPERATION")
+						ACQ_NSPK_MC_Color = checkWarning("NSPK_MC_ACQ", Rs.Fields("OPERATION_FAIL"), ACQ_NSPK_MC, Rs.Fields("timeinminutes"))
+						ACQ_NSPK_MC_Color_all = checkWarning_all("NSPK_MC_ACQ", Rs.Fields("OPERATION_FAIL"), ACQ_NSPK_MC, Rs.Fields("timeinminutes"))
+						ACQ_NSPK_MC_FAIL = Rs.Fields("OPERATION_FAIL")
+						if (ACQ_NSPK_MC>0) then
+							ACQ_NSPK_MC_FAIL_PC=(ACQ_NSPK_MC_FAIL*100)/ACQ_NSPK_MC
+						end if
+					elseif (Rs.Fields("TARGET_CHANNEL")="NSPK MIR") then
+						ACQ_MIR = Rs.Fields("OPERATION")
+						ACQ_MIR_Color = checkWarning("MIR_ACQ", Rs.Fields("OPERATION_FAIL"), ACQ_MIR, Rs.Fields("timeinminutes"))
+						ACQ_MIR_Color_all = checkWarning_all("MIR_ACQ", Rs.Fields("OPERATION_FAIL"), ACQ_MIR, Rs.Fields("timeinminutes"))
+						ACQ_MIR_FAIL = Rs.Fields("OPERATION_FAIL")
+						if (ACQ_MIR>0) then
+							ACQ_MIR_FAIL_PC=(ACQ_MIR_FAIL*100)/ACQ_MIR
+						end if
+					end if
+
+					Rs.MoveNext
+				LOOP
+				END IF
+				RS.CLOSE
+
+				if (ISS_VISA_Color<>"") then 
+					if (ISS_VISA_Color = clWarning) then
+						ISS_VISA_Color = " style=""color: #000000; background: "&ISS_VISA_Color&" "" "
+					else
+						ISS_VISA_Color = " style=""background: "&ISS_VISA_Color&" "" "
+					end if
+				end if 
+				if (ACQ_VISA_Color<>"") then
+					if (ACQ_VISA_Color = clWarning) then
+						ACQ_VISA_Color = " style=""color: #000000; background: "&ACQ_VISA_Color&" "" "
+					else
+						ACQ_VISA_Color = " style=""background: "&ACQ_VISA_Color&" "" "
+					end if
+				end if 
+				if (ISS_MC_Color<>"") then
+					if (ISS_MC_Color = clWarning) then
+						ISS_MC_Color = " style=""color: #000000; background: "&ISS_MC_Color&" "" "
+					else
+						ISS_MC_Color = " style=""background: "&ISS_MC_Color&" "" "
+					end if
+				end if 
+				if (ACQ_MC_Color<>"") then 
+					if (ACQ_MC_Color = clWarning) then
+						ACQ_MC_Color = " style=""color: #000000; background: "&ACQ_MC_Color&" "" "
+					else
+						ACQ_MC_Color = " style=""background: "&ACQ_MC_Color&" "" "
+					end if
+				end if 
+				if (ISS_NSPK_VISA_Color<>"") then 
+					if (ISS_NSPK_VISA_Color = clWarning) then
+						ISS_NSPK_VISA_Color = " style=""color: #000000; background: "&ISS_NSPK_VISA_Color&" "" "
+					else
+						ISS_NSPK_VISA_Color = " style=""background: "&ISS_NSPK_VISA_Color&" "" "
+					end if
+				end if 
+				if (ACQ_NSPK_VISA_Color<>"") then 
+					if (ACQ_NSPK_VISA_Color = clWarning) then
+						ACQ_NSPK_VISA_Color = " style=""color: #000000; background: "&ACQ_NSPK_VISA_Color&" "" "
+					else
+						ACQ_NSPK_VISA_Color = " style=""background: "&ACQ_NSPK_VISA_Color&" "" "
+					end if
+				end if 
+				if (ISS_NSPK_MC_Color<>"") then
+					if (ISS_NSPK_MC_Color = clWarning) then
+						ISS_NSPK_MC_Color = " style=""color: #000000; background: "&ISS_NSPK_MC_Color&" "" "
+					else
+						ISS_NSPK_MC_Color = " style=""background: "&ISS_NSPK_MC_Color&" "" "
+					end if
+				end if 
+				if (ACQ_NSPK_MC_Color<>"") then 
+					if (ACQ_NSPK_MC_Color = clWarning) then
+						ACQ_NSPK_MC_Color = " style=""color: #000000; background: "&ACQ_NSPK_MC_Color&" "" "
+					else
+						ACQ_NSPK_MC_Color = " style=""background: "&ACQ_NSPK_MC_Color&" "" "
+					end if
+				end if
+				if (ISS_MIR_Color<>"") then 
+					if (ISS_MIR_Color = clWarning) then
+						ISS_MIR_Color = " style=""color: #000000; background: "&ISS_MIR_Color&" "" "
+					else
+						ISS_MIR_Color = " style=""background: "&ISS_MIR_Color&" "" "
+					end if
+				end if
+				if (ACQ_MIR_Color<>"") then 
+					if (ACQ_MIR_Color = clWarning) then
+						ACQ_MIR_Color = " style=""color: #000000; background: "&ACQ_MIR_Color&" "" "
+					else
+						ACQ_MIR_Color = " style=""background: "&ACQ_MIR_Color&" "" "
+					end if
+				end if	
+					'-----------------
+					if (ISS_VISA_Color_all<>"") then 
+					if (ISS_VISA_Color_all = clWarning) then
+						ISS_VISA_Color_all = " style=""color: #000000; background: "&ISS_VISA_Color_all&" "" "
+					else
+						ISS_VISA_Color_all = " style=""background: "&ISS_VISA_Color_all&" "" "
+					end if
+				end if 
+				if (ACQ_VISA_Color_all<>"") then
+					if (ACQ_VISA_Color_all = clWarning) then
+						ACQ_VISA_Color_all = " style=""color: #000000; background: "&ACQ_VISA_Color_all&" "" "
+					else
+						ACQ_VISA_Color_all = " style=""background: "&ACQ_VISA_Color_all&" "" "
+					end if
+				end if 
+				if (ISS_MC_Color_all<>"") then
+					if (ISS_MC_Color_all = clWarning) then
+						ISS_MC_Color_all = " style=""color: #000000; background: "&ISS_MC_Color_all&" "" "
+					else
+						ISS_MC_Color_all = " style=""background: "&ISS_MC_Color_all&" "" "
+					end if
+				end if 
+				if (ACQ_MC_Color_all<>"") then 
+					if (ACQ_MC_Color_all = clWarning) then
+						ACQ_MC_Color_all = " style=""color: #000000; background: "&ACQ_MC_Color_all&" "" "
+					else
+						ACQ_MC_Color_all = " style=""background: "&ACQ_MC_Color_all&" "" "
+					end if
+				end if 
+				if (ISS_NSPK_VISA_Color_all<>"") then 
+					if (ISS_NSPK_VISA_Color_all = clWarning) then
+						ISS_NSPK_VISA_Color_all = " style=""color: #000000; background: "&ISS_NSPK_VISA_Color_all&" "" "
+					else
+						ISS_NSPK_VISA_Color_all = " style=""background: "&ISS_NSPK_VISA_Color_all&" "" "
+					end if
+				end if 
+				if (ACQ_NSPK_VISA_Color_all<>"") then 
+					if (ACQ_NSPK_VISA_Color_all = clWarning) then
+						ACQ_NSPK_VISA_Color_all = " style=""color: #000000; background: "&ACQ_NSPK_VISA_Color_all&" "" "
+					else
+						ACQ_NSPK_VISA_Color_all = " style=""background: "&ACQ_NSPK_VISA_Color_all&" "" "
+					end if
+				end if 
+				if (ISS_NSPK_MC_Color_all<>"") then
+					if (ISS_NSPK_MC_Color_all = clWarning) then
+						ISS_NSPK_MC_Color_all = " style=""color: #000000; background: "&ISS_NSPK_MC_Color_all&" "" "
+					else
+						ISS_NSPK_MC_Color_all = " style=""background: "&ISS_NSPK_MC_Color_all&" "" "
+					end if
+				end if 
+				if (ACQ_NSPK_MC_Color_all<>"") then 
+					if (ACQ_NSPK_MC_Color_all = clWarning) then
+						ACQ_NSPK_MC_Color_all = " style=""color: #000000; background: "&ACQ_NSPK_MC_Color_all&" "" "
+					else
+						ACQ_NSPK_MC_Color_all = " style=""background: "&ACQ_NSPK_MC_Color_all&" "" "
+					end if
+				end if
+				if (ISS_MIR_Color_all<>"") then 
+					if (ISS_MIR_Color_all = clWarning) then
+						ISS_MIR_Color_all = " style=""color: #000000; background: "&ISS_MIR_Color_all&" "" "
+					else
+						ISS_MIR_Color_all = " style=""background: "&ISS_MIR_Color_all&" "" "
+					end if
+				end if
+				if (ACQ_MIR_Color_all<>"") then 
+					if (ACQ_MIR_Color_all = clWarning) then
+						ACQ_MIR_Color_all = " style=""color: #000000; background: "&ACQ_MIR_Color_all&" "" "
+					else
+						ACQ_MIR_Color_all = " style=""background: "&ACQ_MIR_Color_all&" "" "
+					end if
+				end if
+
+				tblISS_ACQ = ""
+
+					'-----------SORTING-------------------------------------------------------------------------------------
+			'1-ая (верхняя) строка - группа каналов NSPK_VISA (по умолчанию строить график для группы каналов NSPK_VISA_ACQ)
+			'2-ая строка - группа каналов NSPK_MC
+			'3-ья строка – группа каналов MIR
+			'4-ая строка – группа каналов VISA
+			'5-ая строка – группа каналов MC
+
+					Dim tbl_tr(6,6)
+					Dim str_tr(6)
+
+					tbl_tr(1, 1)=Max(ISS_NSPK_VISA_FAIL_PC, ACQ_NSPK_VISA_FAIL_PC)
+					tbl_tr(1, 2)=ISS_NSPK_VISA_FAIL_PC
+					tbl_tr(1, 3)=ACQ_NSPK_VISA_FAIL_PC
+					tbl_tr(1, 4)="ISS_NSPK_VISA"
+					tbl_tr(1, 5)="ACQ_NSPK_VISA"
+					tbl_tr(1, 6)=1
+
+					tbl_tr(2, 1)=Max(ISS_NSPK_MC_FAIL_PC, ACQ_NSPK_MC_FAIL_PC)
+					tbl_tr(2, 2)=ISS_NSPK_MC_FAIL_PC
+					tbl_tr(2, 3)=ACQ_NSPK_MC_FAIL_PC
+					tbl_tr(2, 4)="ISS_NSPK_MC"
+					tbl_tr(2, 5)="ACQ_NSPK_MC"
+					tbl_tr(2, 6)=2
+
+					tbl_tr(3, 1)=Max(ISS_MIR_FAIL_PC, ACQ_MIR_FAIL_PC)
+					tbl_tr(3, 2)=ISS_MIR_FAIL_PC
+					tbl_tr(3, 3)=ACQ_MIR_FAIL_PC
+					tbl_tr(3, 4)="ISS_MIR"
+					tbl_tr(3, 5)="ACQ_MIR"
+					tbl_tr(3, 6)=3
+
+					tbl_tr(4, 1)=Max(ISS_VISA_FAIL_PC, ACQ_VISA_FAIL_PC)
+					tbl_tr(4, 2)=ISS_VISA_FAIL_PC
+					tbl_tr(4, 3)=ACQ_VISA_FAIL_PC
+					tbl_tr(4, 4)="ISS_VISA"
+					tbl_tr(4, 5)="ACQ_VISA"
+					tbl_tr(4, 6)=4
+
+					tbl_tr(5, 1)=Max(ISS_MC_FAIL_PC, ACQ_MC_FAIL_PC)
+					tbl_tr(5, 2)=ISS_MC_FAIL_PC
+					tbl_tr(5, 3)=ACQ_MC_FAIL_PC
+					tbl_tr(5, 4)="ISS_MC"
+					tbl_tr(5, 5)="ACQ_MC"
+					tbl_tr(5, 6)=5
+
+
+					For j = 1 To 5-1
+							For k = j + 1 To 5
+									If (tbl_tr(j,1) < tbl_tr(k,1)) or ((tbl_tr(k,1)=0) and (tbl_tr(j,1)=0) and (tbl_tr(j,6) > tbl_tr(k,6)) ) Then
+											For l = 1 To 6
+													Temp = tbl_tr(j,l)
+													tbl_tr(j,l) = tbl_tr(k,l)
+													tbl_tr(k,l) = Temp
+											Next
+
+									End If
+							Next
+					Next
+
+
+
+			'tr_NSPK_VISA 
+				str_tr(1)  = "<tr><td width=""100px"" >NSPK_VISA</td><td onclick=""ChGraph('ISS_NSPK_VISA',daysBefore)"" width=""70px""  "&ISS_NSPK_VISA_Color_all&" >"&ISS_NSPK_VISA&"</td><td onclick=""ChGraph('ISS_NSPK_VISA',daysBefore)""  width=""70px"" >"&ISS_NSPK_VISA_FAIL&"</td><td onclick=""ChGraph('ISS_NSPK_VISA',daysBefore)""  width=""70px"" "&ISS_NSPK_VISA_Color&" >"&Round(ISS_NSPK_VISA_FAIL_PC,3)&"</td>"&_
+							"<td onclick=""ChGraph('ACQ_NSPK_VISA',daysBefore)""  width=""70px"" "&ACQ_NSPK_VISA_Color_all&" >"&ACQ_NSPK_VISA&"</td><td onclick=""ChGraph('ACQ_NSPK_VISA',daysBefore)""  width=""70px"" >"&ACQ_NSPK_VISA_FAIL&"</td><td onclick=""ChGraph('ACQ_NSPK_VISA',daysBefore)""  width=""70px"" "&ACQ_NSPK_VISA_Color&" >"&Round(ACQ_NSPK_VISA_FAIL_PC,3)&"</td><tr>"
+			'tr_NSPK_MC 
+				str_tr(2) = "<tr><td width=""100px"" >NSPK_MC</td><td onclick=""ChGraph('ISS_NSPK_MC',daysBefore)"" width=""70px"" "&ISS_NSPK_MC_Color_all&" >"&ISS_NSPK_MC&"</td><td onclick=""ChGraph('ISS_NSPK_MC',daysBefore)"" width=""70px""  >"&ISS_NSPK_MC_FAIL&"</td><td onclick=""ChGraph('ISS_NSPK_MC',daysBefore)"" width=""70px""  "&ISS_NSPK_MC_Color&" >"&Round(ISS_NSPK_MC_FAIL_PC,3)&"</td>"&_
+						"<td onclick=""ChGraph('ACQ_NSPK_MC',daysBefore)""  width=""70px"" "&ACQ_NSPK_MC_Color_all&" >"&ACQ_NSPK_MC&"</td><td onclick=""ChGraph('ACQ_NSPK_MC',daysBefore)""  width=""70px"" >"&ACQ_NSPK_MC_FAIL&"</td><td onclick=""ChGraph('ACQ_NSPK_MC',daysBefore)"" width=""70px""  "&ACQ_NSPK_MC_Color&" >"&Round(ACQ_NSPK_MC_FAIL_PC,3)&"</td><tr>"	
+			'tr_MIR 
+				str_tr(3) = "<tr><td width=""100px"" >MIR</td><td onclick=""ChGraph('ISS_MIR',daysBefore)""  width=""70px"" "&ISS_MIR_Color_all&" >"&ISS_MIR&"</td><td onclick=""ChGraph('ISS_MIR',daysBefore)""  width=""70px"" >"&ISS_MIR_FAIL&"</td><td onclick=""ChGraph('ISS_MIR',daysBefore)"" width=""70px""  "&ISS_MIR_Color&" >"&Round(ISS_MIR_FAIL_PC,3)&"</td>"&_
+					"<td onclick=""ChGraph('ACQ_MIR',daysBefore)""  width=""70px"" "&ACQ_MIR_Color_all&" >"&ACQ_MIR&"</td><td onclick=""ChGraph('ACQ_MIR',daysBefore)""  width=""70px""  >"&ACQ_MIR_FAIL&"</td><td onclick=""ChGraph('ACQ_MIR',daysBefore)"" width=""70px""  "&ACQ_MIR_Color&" >"&Round(ACQ_MIR_FAIL_PC,3)&"</td><tr>"
+			'tr_VISA
+				str_tr(4) = "<tr><td width=""100px"" >VISA</td><td onclick=""ChGraph('ISS_VISA',daysBefore)"" width=""70px"" "&ISS_VISA_Color_all&" >"&ISS_VISA&"</td><td onclick=""ChGraph('ISS_VISA',daysBefore)"" width=""70px"" >"&ISS_VISA_FAIL&"</td><td onclick=""ChGraph('ISS_VISA',daysBefore)"" width=""70px"" "&ISS_VISA_Color&" >"&Round(ISS_VISA_FAIL_PC,3)&"</td>"&_
+						"<td onclick=""ChGraph('ACQ_VISA',daysBefore)"" width=""70px"" "&ACQ_VISA_Color_all&" >"&ACQ_VISA&"</td><td onclick=""ChGraph('ACQ_VISA',daysBefore)"" width=""70px"" >"&ACQ_VISA_FAIL&"</td><td onclick=""ChGraph('ACQ_VISA',daysBefore)"" width=""70px"" "&ACQ_VISA_Color&" >"&Round(ACQ_VISA_FAIL_PC,3)&"</td><tr>"
+			'tr_MC
+				str_tr(5) = "<tr><td width=""100px"" >MC</td><td onclick=""ChGraph('ISS_MC',daysBefore)""  width=""70px"" "&ISS_MC_Color_all&" >"&ISS_MC&"</td><td onclick=""ChGraph('ISS_MC',daysBefore)""  width=""70px"" >"&ISS_MC_FAIL&"</td><td onclick=""ChGraph('ISS_MC',daysBefore)"" width=""70px""  "&ISS_MC_Color&" >"&Round(ISS_MC_FAIL_PC,3)&"</td>"&_
+					"<td onclick=""ChGraph('ACQ_MC',daysBefore)""  width=""70px"" "&ACQ_MC_Color_all&" >"&ACQ_MC&"</td><td onclick=""ChGraph('ACQ_MC',daysBefore)""  width=""70px"" >"&ACQ_MC_FAIL&"</td><td onclick=""ChGraph('ACQ_MC',daysBefore)"" width=""70px""  "&ACQ_MC_Color&" >"&Round(ACQ_MC_FAIL_PC,3)&"</td><tr>"
+
+				For j = 1 To 5
+							tblISS_ACQ = tblISS_ACQ&str_tr(tbl_tr(j,6))
+				Next
+										
+
+				Response.Write tblISS_ACQ
+
+		elseif (ChName="ChannelATM") then
+'------------T=8----------------------------------------------------------------------------------------
+				All_ATM = 0
+				All_BPT = 0
+				All_POS = 0
+				All_H2H_RBS = 0
+				All_ATM_FAIL = 0
+				All_BPT_FAIL = 0
+				All_POS_FAIL = 0
+				All_H2H_RBS_FAIL = 0
+				All_ATM_FAIL_PC = 0
+				All_BPT_FAIL_PC = 0
+				All_POS_FAIL_PC = 0
+				All_H2H_RBS_FAIL_PC = 0
+				
+				All_ATM_Color = ""
+				All_BPT_Color = ""
+				All_POS_Color = ""
+				All_H2H_RBS_Color = ""
+
+					All_ATM_Color_all = ""
+				All_BPT_Color_all = ""
+				All_POS_Color_all = ""
+				All_H2H_RBS_Color_all = ""
+
+				sqlstr = "SELECT DATEADD(MONTH,-1,[TIME]) [TIME],SUM(OPERATION) OPERATION,SUM(OPERATION_FAIL) OPERATION_FAIL, SOURCE_CHANNEL "
+				sqlstr = sqlstr&" ,DATEPART(HOUR,[TIME])*60+DATEPART(MINUTE,[TIME]) timeinminutes FROM LOG_VO "
+				'sqlstr = sqlstr&" WHERE [TIME]=(select top 1 [TIME] from LOG_VO order by [TIME] desc) "
+				sqlstr = sqlstr&" WHERE [TIME]>=convert(datetime,floor(convert(float,DATEADD(DAY,"&DBefore&",GETDATE()) ))) "
+			  sqlstr = sqlstr&" and [TIME]<convert(datetime,floor(convert(float, DATEADD(DAY,"&DBefore&"+1,GETDATE()) ))) "
+				sqlstr = sqlstr&" GROUP BY [TIME],SOURCE_CHANNEL"
+				RS.OPEN sqlstr, CONN
+				IF NOT RS.EOF THEN
+				DO WHILE (NOT RS.EOF)
+					if (Rs.Fields("SOURCE_CHANNEL")="OUR_ATM") then
+						All_ATM = Rs.Fields("OPERATION")
+						All_ATM_Color = checkWarning("ATM_ACQ", Rs.Fields("OPERATION_FAIL"), All_ATM, Rs.Fields("timeinminutes"))
+									All_ATM_Color_all = checkWarning_all("ATM_ACQ", Rs.Fields("OPERATION_FAIL"), All_ATM, Rs.Fields("timeinminutes"))
+						All_ATM_FAIL = Rs.Fields("OPERATION_FAIL")
+						if (All_ATM>0) then
+							All_ATM_FAIL_PC=(All_ATM_FAIL*100)/All_ATM
+						end if
+					elseif (Rs.Fields("SOURCE_CHANNEL")="OUR_BPT") then
+						All_BPT = Rs.Fields("OPERATION")
+						All_BPT_Color = checkWarning("BPT_ACQ", Rs.Fields("OPERATION_FAIL"), All_BPT, Rs.Fields("timeinminutes"))
+									All_BPT_Color_all = checkWarning_all("BPT_ACQ", Rs.Fields("OPERATION_FAIL"), All_BPT, Rs.Fields("timeinminutes"))
+						All_BPT_FAIL = Rs.Fields("OPERATION_FAIL")
+						if (All_BPT>0) then
+							All_BPT_FAIL_PC=(All_BPT_FAIL*100)/All_BPT
+						end if
+					elseif (Rs.Fields("SOURCE_CHANNEL")="OUR_POS") then
+						All_POS = Rs.Fields("OPERATION")
+						All_POS_Color = checkWarning("POS_ACQ", Rs.Fields("OPERATION_FAIL"), All_POS, Rs.Fields("timeinminutes"))
+									All_POS_Color_all = checkWarning_all("POS_ACQ", Rs.Fields("OPERATION_FAIL"), All_POS, Rs.Fields("timeinminutes"))
+						All_POS_FAIL = Rs.Fields("OPERATION_FAIL")
+						if (All_POS>0) then
+							All_POS_FAIL_PC=(All_POS_FAIL*100)/All_POS
+						end if
+					elseif (Rs.Fields("SOURCE_CHANNEL")="H2H_BPCRBS") then
+						All_H2H_RBS = Rs.Fields("OPERATION")
+						All_H2H_RBS_Color = checkWarning("H2H_RBS", Rs.Fields("OPERATION_FAIL"), All_H2H_RBS, Rs.Fields("timeinminutes"))
+									All_H2H_RBS_Color_all = checkWarning_all("H2H_RBS", Rs.Fields("OPERATION_FAIL"), All_H2H_RBS, Rs.Fields("timeinminutes"))
+						All_H2H_RBS_FAIL = Rs.Fields("OPERATION_FAIL")
+						if (All_H2H_RBS>0) then
+							All_H2H_RBS_FAIL_PC=(All_H2H_RBS_FAIL*100)/All_H2H_RBS
+						end if
+					end if
+					
+					Rs.MoveNext
+				LOOP
+				END IF
+				RS.CLOSE
+
+				if (All_ATM_Color<>"") then
+					if (All_ATM_Color = clWarning) then
+						All_ATM_Color = " style=""color: #000000; background: "&All_ATM_Color&" "" "
+					else
+						All_ATM_Color = " style=""background: "&All_ATM_Color&" "" "
+					end if
+				end if 
+				if (All_BPT_Color<>"") then
+					if (All_BPT_Color = clWarning) then
+						All_BPT_Color = " style=""color: #000000; background: "&All_BPT_Color&" "" "
+					else
+						All_BPT_Color = " style=""background: "&All_BPT_Color&" "" "
+					end if
+				end if 
+				if (All_POS_Color<>"") then 
+					if (All_POS_Color = clWarning) then
+						All_POS_Color = " style=""color: #000000; background: "&All_POS_Color&" "" "
+					else
+						All_POS_Color = " style=""background: "&All_POS_Color&" "" "
+					end if
+				end if 
+				if (All_H2H_RBS_Color<>"") then 
+					if (All_H2H_RBS_Color = clWarning) then
+						All_H2H_RBS_Color = " style=""color: #000000; background: "&All_H2H_RBS_Color&" "" "
+					else
+						All_H2H_RBS_Color = " style=""background: "&All_H2H_RBS_Color&" "" "
+					end if
+				end if 
+
+				if (All_ATM_Color_all<>"") then
+					if (All_ATM_Color_all = clWarning) then
+						All_ATM_Color_all = " style=""color: #000000; background: "&All_ATM_Color_all&" "" "
+					else
+						All_ATM_Color_all = " style=""background: "&All_ATM_Color_all&" "" "
+					end if
+				end if 
+				if (All_BPT_Color_all<>"") then
+					if (All_BPT_Color_all = clWarning) then
+						All_BPT_Color_all = " style=""color: #000000; background: "&All_BPT_Color_all&" "" "
+					else
+						All_BPT_Color_all = " style=""background: "&All_BPT_Color_all&" "" "
+					end if
+				end if 
+				if (All_POS_Color_all<>"") then 
+					if (All_POS_Color_all = clWarning) then
+						All_POS_Color_all = " style=""color: #000000; background: "&All_POS_Color_all&" "" "
+					else
+						All_POS_Color_all = " style=""background: "&All_POS_Color_all&" "" "
+					end if
+				end if 
+				if (All_H2H_RBS_Color_all<>"") then 
+					if (All_H2H_RBS_Color_all = clWarning) then
+						All_H2H_RBS_Color_all = " style=""color: #000000; background: "&All_H2H_RBS_Color_all&" "" "
+					else
+						All_H2H_RBS_Color_all = " style=""background: "&All_H2H_RBS_Color_all&" "" "
+					end if
+				end if
+
+				tblATM = ""
+					'-----------SORTING-------------------------------------------------------------------------------------
+			'1-ая (верхняя) строка - группа каналов POS_ACQ 
+			'2-ая строка - группа каналов ATM
+			'3-ья строка – группа каналов H2H_RBS
+			'4-ая строка – группа каналов BPT
+
+					Dim tbl_tr8(4,3)
+					Dim str_tr8(4)
+
+					tbl_tr8(1, 1)=All_POS_FAIL_PC
+					tbl_tr8(1, 2)="All_POS"
+					tbl_tr8(1, 3)=1
+
+					tbl_tr8(2, 1)=All_ATM_FAIL_PC
+					tbl_tr8(2, 2)="All_ATM"
+					tbl_tr8(2, 3)=2
+
+					tbl_tr8(3, 1)=All_H2H_RBS_FAIL_PC
+					tbl_tr8(3, 2)="All_H2H_RBS"
+					tbl_tr8(3, 3)=3
+
+					tbl_tr8(4, 1)=All_BPT_FAIL_PC
+					tbl_tr8(4, 2)="All_BPT"
+					tbl_tr8(4, 3)=4
+
+
+					For j = 1 To 4-1
+							For k = j + 1 To 4
+									If (tbl_tr8(j,1) < tbl_tr8(k,1)) or ((tbl_tr8(k,1)=0) and (tbl_tr8(j,1)=0) and (tbl_tr8(j,3) > tbl_tr8(k,3)) ) Then
+											For l = 1 To 3
+													Temp = tbl_tr8(j,l)
+													tbl_tr8(j,l) = tbl_tr8(k,l)
+													tbl_tr8(k,l) = Temp
+											Next
+
+									End If
+							Next
+					Next
+
+				str_tr8(1) ="<tr><td width=""100px"">POS</td><td onclick=""ChGraph('All_POS',daysBefore)"" width=""70px"" "&All_POS_Color_all&" >"&All_POS&"</td><td onclick=""ChGraph('All_POS',daysBefore)""  width=""70px"" >"&All_POS_FAIL&"</td><td onclick=""ChGraph('All_POS',daysBefore)""  width=""70px"" "&All_POS_Color&" >"&Round(All_POS_FAIL_PC,3)&"</td><tr>"
+				str_tr8(2)  = "<tr><td width=""100px"" >ATM</td><td onclick=""ChGraph('All_ATM',daysBefore)"" width=""70px""  "&All_ATM_Color_all&" >"&All_ATM&"</td><td onclick=""ChGraph('All_ATM',daysBefore)"" width=""70px"" >"&All_ATM_FAIL&"</td><td onclick=""ChGraph('All_ATM',daysBefore)"" width=""70px"" "&All_ATM_Color&" >"&Round(All_ATM_FAIL_PC,3)&"</td><tr>"
+				str_tr8(3) = "<tr><td width=""100px"" >H2H_RBS</td><td onclick=""ChGraph('All_H2H_RBS',daysBefore)""  width=""70px""  "&All_H2H_RBS_Color_all&" >"&All_H2H_RBS&"</td><td onclick=""ChGraph('All_H2H_RBS',daysBefore)""  width=""70px"" >"&All_H2H_RBS_FAIL&"</td><td onclick=""ChGraph('All_H2H_RBS',daysBefore)""  width=""70px"" "&All_H2H_RBS_Color&" >"&Round(All_H2H_RBS_FAIL_PC,3)&"</td><tr>"
+				str_tr8(4) = "<tr><td width=""100px"" >BPT</td><td onclick=""ChGraph('All_BPT',daysBefore)""  width=""70px""  "&All_BPT_Color_all&" >"&All_BPT&"</td><td onclick=""ChGraph('All_BPT',daysBefore)""  width=""70px"" >"&All_BPT_FAIL&"</td><td onclick=""ChGraph('All_BPT',daysBefore)""  width=""70px"" "&All_BPT_Color&" >"&Round(All_BPT_FAIL_PC,3)&"</td><tr>"
+			
+				For j = 1 To 4
+							'tblISS_ACQ = tblISS_ACQ&str_tr8(tbl_tr8(j,3))
+							tblATM = tblATM&str_tr8(tbl_tr8(j,3))
+				Next		    				
+				
+				Response.Write tblATM
+
+		elseif (ChName="Channel3DS") then
+'------------T=9----------------------------------------------------------------------------------------
+				NSPK_VISA = 0
+				NSPK_MC = 0
+				VISA = 0
+				MC = 0
+				SOA_USB = 0
+				SOA_AGENT = 0
+				
+				NSPK_VISA_FAIL = 0
+				NSPK_MC_FAIL = 0
+				VISA_FAIL = 0
+				MC_FAIL = 0
+				SOA_USB_FAIL = 0
+				SOA_AGENT_FAIL = 0
+				
+				NSPK_VISA_FAIL_PC = 0
+				NSPK_MC_FAIL_PC = 0
+				VISA_FAIL_PC = 0
+				MC_FAIL_PC = 0
+				SOA_USB_FAIL_PC = 0
+				SOA_AGENT_FAIL_PC = 0
+				
+				VISA_Color = ""
+				NSPK_VISA_Color = ""
+				MC_Color = ""
+				NSPK_MC_Color = ""
+				SOA_AGENT_Color = ""
+				SOA_USB_Color = ""
+
+					VISA_Color_all = ""
+				NSPK_VISA_Color_all = ""
+				MC_Color_all = ""
+				NSPK_MC_Color_all = ""
+				SOA_AGENT_Color_all = ""
+				SOA_USB_Color_all = ""
+
+				sqlstr = "SELECT DATEADD(MONTH,-1,[TIME]) [TIME],SUM(OPERATION) OPERATION, SUM(OPERATION_FAIL) OPERATION_FAIL, SOURCE_CHANNEL "
+					sqlstr = sqlstr&" ,DATEPART(HOUR,[TIME])*60+DATEPART(MINUTE,[TIME]) timeinminutes FROM LOG_VS "
+				'sqlstr = sqlstr&" WHERE [TIME]=(select top 1 [TIME] from LOG_VS order by [TIME] desc) "
+				sqlstr = sqlstr&" WHERE [TIME]>=convert(datetime,floor(convert(float,DATEADD(DAY,"&DBefore&",GETDATE()) ))) "
+				sqlstr = sqlstr&" and [TIME]<convert(datetime,floor(convert(float, DATEADD(DAY,"&DBefore&"+1,GETDATE()) ))) "
+				sqlstr = sqlstr&" and ((SERVICE='3D-Secure' and SOURCE_CHANNEL in ('NSPK_VISA','NSPK_MasterCard','VISA','MasterCard')) or SERVICE='SOA_AGENT' or SERVICE='SOA_USB') "
+				sqlstr = sqlstr&" GROUP BY [TIME],SOURCE_CHANNEL"
+				RS.OPEN sqlstr, CONN
+				IF NOT RS.EOF THEN
+				DO WHILE (NOT RS.EOF)
+					if (Rs.Fields("SOURCE_CHANNEL")="NSPK_VISA") then
+						NSPK_VISA = Rs.Fields("OPERATION")
+						NSPK_VISA_Color = checkWarning("NSPK_VISA_3DS", Rs.Fields("OPERATION_FAIL"), Rs.Fields("OPERATION"), Rs.Fields("timeinminutes"))
+									NSPK_VISA_Color_all = checkWarning_all("NSPK_VISA_3DS", Rs.Fields("OPERATION_FAIL"), Rs.Fields("OPERATION"), Rs.Fields("timeinminutes"))
+						NSPK_VISA_FAIL = Rs.Fields("OPERATION_FAIL")
+						if (NSPK_VISA>0) then
+							NSPK_VISA_FAIL_PC=(NSPK_VISA_FAIL*100)/NSPK_VISA
+						end if
+					elseif (Rs.Fields("SOURCE_CHANNEL")="NSPK_MasterCard") then
+						NSPK_MC = Rs.Fields("OPERATION")
+						NSPK_MC_Color = checkWarning("NSPK_MC_3DS", Rs.Fields("OPERATION_FAIL"), Rs.Fields("OPERATION"), Rs.Fields("timeinminutes"))
+									NSPK_MC_Color_all = checkWarning_all("NSPK_MC_3DS", Rs.Fields("OPERATION_FAIL"), Rs.Fields("OPERATION"), Rs.Fields("timeinminutes"))
+						NSPK_MC_FAIL = Rs.Fields("OPERATION_FAIL")
+						if (NSPK_MC>0) then
+							NSPK_MC_FAIL_PC=(NSPK_MC_FAIL*100)/NSPK_MC
+						end if
+					elseif (Rs.Fields("SOURCE_CHANNEL")="VISA") then
+						VISA = Rs.Fields("OPERATION")
+						VISA_Color = checkWarning("VISA_3DS", Rs.Fields("OPERATION_FAIL"), Rs.Fields("OPERATION"), Rs.Fields("timeinminutes"))
+									VISA_Color_all = checkWarning_all("VISA_3DS", Rs.Fields("OPERATION_FAIL"), Rs.Fields("OPERATION"), Rs.Fields("timeinminutes"))
+						VISA_FAIL = Rs.Fields("OPERATION_FAIL")
+						if (VISA>0) then
+							VISA_FAIL_PC=(VISA_FAIL*100)/VISA
+						end if
+					elseif (Rs.Fields("SOURCE_CHANNEL")="MasterCard") then
+						MC = Rs.Fields("OPERATION")
+						MC_Color = checkWarning("MC_3DS", Rs.Fields("OPERATION_FAIL"), Rs.Fields("OPERATION"), Rs.Fields("timeinminutes"))
+									MC_Color_all = checkWarning_all("MC_3DS", Rs.Fields("OPERATION_FAIL"), Rs.Fields("OPERATION"), Rs.Fields("timeinminutes"))
+						MC_FAIL = Rs.Fields("OPERATION_FAIL")
+						if (MC>0) then
+							MC_FAIL_PC=(MC_FAIL*100)/MC
+						end if		
+					elseif (Rs.Fields("SOURCE_CHANNEL")="RBS") then
+						SOA_USB = Rs.Fields("OPERATION")
+						SOA_USB_Color = checkWarning("SOA_USB", Rs.Fields("OPERATION_FAIL"), Rs.Fields("OPERATION"), Rs.Fields("timeinminutes"))
+									SOA_USB_Color_all = checkWarning_all("SOA_USB", Rs.Fields("OPERATION_FAIL"), Rs.Fields("OPERATION"), Rs.Fields("timeinminutes"))
+						SOA_USB_FAIL = Rs.Fields("OPERATION_FAIL")
+						if (SOA_USB>0) then
+							SOA_USB_FAIL_PC=(SOA_USB_FAIL*100)/SOA_USB
+						end if	
+					elseif (Rs.Fields("SOURCE_CHANNEL")="OUR_POS") then
+						SOA_AGENT = Rs.Fields("OPERATION")
+						SOA_AGENT_Color = checkWarning("SOA_AGENT", Rs.Fields("OPERATION_FAIL"), Rs.Fields("OPERATION"), Rs.Fields("timeinminutes"))
+									SOA_AGENT_Color_all = checkWarning_all("SOA_AGENT", Rs.Fields("OPERATION_FAIL"), Rs.Fields("OPERATION"), Rs.Fields("timeinminutes"))
+						SOA_AGENT_FAIL = Rs.Fields("OPERATION_FAIL")
+						if (SOA_AGENT>0) then
+							SOA_AGENT_FAIL_PC=(SOA_AGENT_FAIL*100)/SOA_AGENT
+						end if			
+					end if
+					
+					Rs.MoveNext
+				LOOP
+				END IF
+				RS.CLOSE
+
+				if (VISA_Color<>"") then 
+					if (VISA_Color = clWarning) then 
+						VISA_Color = " style=""color: #000000; background: "&VISA_Color&" "" "
+					else
+						VISA_Color = " style=""background: "&VISA_Color&" "" "
+					end if 
+				end if 
+				if (NSPK_VISA_Color<>"") then 
+					if (NSPK_VISA_Color = clWarning) then 
+						NSPK_VISA_Color = " style=""color: #000000; background: "&NSPK_VISA_Color&" "" "
+					else
+						NSPK_VISA_Color = " style=""background: "&NSPK_VISA_Color&" "" "
+					end if
+				end if 
+				if (MC_Color<>"") then 
+					if (MC_Color = clWarning) then 
+						MC_Color = " style=""color: #000000; background: "&MC_Color&" "" "
+					else
+						MC_Color = " style=""background: "&MC_Color&" "" "
+					end if
+				end if 
+				if (NSPK_MC_Color<>"") then 
+					if (NSPK_MC_Color = clWarning) then 
+						NSPK_MC_Color = " style=""color: #000000; background: "&NSPK_MC_Color&" "" "
+					else
+						NSPK_MC_Color = " style=""background: "&NSPK_MC_Color&" "" "
+					end if
+				end if
+				if (SOA_AGENT_Color<>"") then 
+					if (SOA_AGENT_Color = clWarning) then
+						SOA_AGENT_Color = " style=""color: #000000; background: "&SOA_AGENT_Color&" "" "
+					else
+						SOA_AGENT_Color = " style=""background: "&SOA_AGENT_Color&" "" "
+					end if
+				end if
+				if (SOA_USB_Color<>"") then 
+					if (SOA_USB_Color = clWarning) then
+						SOA_USB_Color = " style=""color: #000000; background: "&SOA_USB_Color&" "" "
+					else
+						SOA_USB_Color = " style=""background: "&SOA_USB_Color&" "" "
+					end if
+				end if
+
+					if (VISA_Color_all<>"") then 
+					if (VISA_Color_all = clWarning) then 
+						VISA_Color_all = " style=""color: #000000; background: "&VISA_Color_all&" "" "
+					else
+						VISA_Color_all = " style=""background: "&VISA_Color_all&" "" "
+					end if 
+				end if 
+				if (NSPK_VISA_Color_all<>"") then 
+					if (NSPK_VISA_Color_all = clWarning) then 
+						NSPK_VISA_Color_all = " style=""color: #000000; background: "&NSPK_VISA_Color_all&" "" "
+					else
+						NSPK_VISA_Color_all = " style=""background: "&NSPK_VISA_Color_all&" "" "
+					end if
+				end if 
+				if (MC_Color_all<>"") then 
+					if (MC_Color_all = clWarning) then 
+						MC_Color_all = " style=""color: #000000; background: "&MC_Color_all&" "" "
+					else
+						MC_Color_all = " style=""background: "&MC_Color_all&" "" "
+					end if
+				end if 
+				if (NSPK_MC_Color_all<>"") then 
+					if (NSPK_MC_Color_all = clWarning) then 
+						NSPK_MC_Color_all = " style=""color: #000000; background: "&NSPK_MC_Color_all&" "" "
+					else
+						NSPK_MC_Color_all = " style=""background: "&NSPK_MC_Color_all&" "" "
+					end if
+				end if
+				if (SOA_AGENT_Color_all<>"") then 
+					if (SOA_AGENT_Color_all = clWarning) then
+						SOA_AGENT_Color_all = " style=""color: #000000; background: "&SOA_AGENT_Color_all&" "" "
+					else
+						SOA_AGENT_Color_all = " style=""background: "&SOA_AGENT_Color_all&" "" "
+					end if
+				end if
+				if (SOA_USB_Color_all<>"") then 
+					if (SOA_USB_Color_all = clWarning) then
+						SOA_USB_Color_all = " style=""color: #000000; background: "&SOA_USB_Color_all&" "" "
+					else
+						SOA_USB_Color_all = " style=""background: "&SOA_USB_Color_all&" "" "
+					end if
+				end if
+
+				tbl3DS = ""
+				'-----------SORTING-------------------------------------------------------------------------------------
+			'1-ая (верхняя) строка - группа каналов SOA_USB 
+			'2-ая строка - группа каналов SOA_AGENT 
+			'3-ья строка – группа каналов NSPK_VISA (переименовать в NSPK_VISA_3DS)
+			'4-ая строка – группа каналов NSPK_MC (переименовать в NSPK_MC_3DS)
+			'5-ая строка – группа каналов VISA (переименовать в VISA_3DS)
+			'4-ая строка – группа каналов MC (переименовать в MC _3DS)
+
+					Dim tbl_tr9(6,3)
+					Dim str_tr9(6)
+
+					tbl_tr9(1, 1)=SOA_USB_FAIL_PC
+					tbl_tr9(1, 2)="SOA_USB"
+					tbl_tr9(1, 3)=1
+
+					tbl_tr9(2, 1)=SOA_AGENT_FAIL_PC
+					tbl_tr9(2, 2)="SOA_AGENT"
+					tbl_tr9(2, 3)=2
+
+					tbl_tr9(3, 1)=NSPK_VISA_FAIL_PC
+					tbl_tr9(3, 2)="NSPK_VISA"
+					tbl_tr9(3, 3)=3
+
+					tbl_tr9(4, 1)=NSPK_MC_FAIL_PC
+					tbl_tr9(4, 2)="NSPK_MC"
+					tbl_tr9(4, 3)=4
+
+					tbl_tr9(5, 1)=VISA_FAIL_PC
+					tbl_tr9(5, 2)="VISA"
+					tbl_tr9(5, 3)=5
+
+					tbl_tr9(6, 1)=MC_FAIL_PC
+					tbl_tr9(6, 2)="MC"
+					tbl_tr9(6, 3)=6
+
+
+					For j = 1 To 6-1
+							For k = j + 1 To 6
+									If (tbl_tr9(j,1) < tbl_tr9(k,1)) or ((tbl_tr9(k,1)=0) and (tbl_tr9(j,1)=0) and (tbl_tr9(j,3) > tbl_tr9(k,3)) ) Then
+											For l = 1 To 3
+													Temp = tbl_tr9(j,l)
+													tbl_tr9(j,l) = tbl_tr9(k,l)
+													tbl_tr9(k,l) = Temp
+											Next
+
+									End If
+							Next
+					Next
+
+				str_tr9(1) = "<tr><td width=""100px"" >SOA_USB</td><td onclick=""ChGraph('SOA_USB',daysBefore)"" width=""70px""   "&SOA_USB_Color_all&"  >"&SOA_USB&"</td><td onclick=""ChGraph('SOA_USB',daysBefore)"" width=""70px""  >"&SOA_USB_FAIL&"</td><td onclick=""ChGraph('SOA_USB',daysBefore)"" width=""70px""  "&SOA_USB_Color&" >"&Round(SOA_USB_FAIL_PC,3)&"</td><tr>"
+				str_tr9(2) = "<tr><td width=""100px"" >SOA_AGENT</td><td onclick=""ChGraph('SOA_AGENT',daysBefore)"" width=""70px""   "&SOA_AGENT_Color_all&"  >"&SOA_AGENT&"</td><td onclick=""ChGraph('SOA_AGENT',daysBefore)"" width=""70px""  >"&SOA_AGENT_FAIL&"</td><td onclick=""ChGraph('SOA_AGENT',daysBefore)"" width=""70px""  "&SOA_AGENT_Color&" >"&Round(SOA_AGENT_FAIL_PC,3)&"</td><tr>"
+				str_tr9(3) = "<tr><td width=""100px"" >NSPK_VISA_3DS</td><td onclick=""ChGraph('NSPK_VISA',daysBefore)"" width=""70px""  "&NSPK_VISA_Color_all&"  >"&NSPK_VISA&"</td><td onclick=""ChGraph('NSPK_VISA',daysBefore)"" width=""70px"" >"&NSPK_VISA_FAIL&"</td><td onclick=""ChGraph('NSPK_VISA',daysBefore)"" width=""70px"" "&NSPK_VISA_Color&" >"&Round(NSPK_VISA_FAIL_PC,3)&"</td><tr>"
+				str_tr9(4) = "<tr><td width=""100px"" >NSPK_MC_3DS</td><td onclick=""ChGraph('NSPK_MC',daysBefore)""  width=""70px""  "&NSPK_MC_Color_all&" >"&NSPK_MC&"</td><td onclick=""ChGraph('NSPK_MC',daysBefore)"" width=""70px""  >"&NSPK_MC_FAIL&"</td><td onclick=""ChGraph('NSPK_MC',daysBefore)"" width=""70px""  "&NSPK_MC_Color&" >"&Round(NSPK_MC_FAIL_PC,3)&"</td><tr>"
+				str_tr9(5) = "<tr><td width=""100px"" >VISA_3DS</td><td onclick=""ChGraph('VISA',daysBefore)""  width=""70px""  "&VISA_Color_all&" >"&VISA&"</td><td onclick=""ChGraph('VISA',daysBefore)"" width=""70px""  >"&VISA_FAIL&"</td><td onclick=""ChGraph('VISA',daysBefore)""  width=""70px"" "&VISA_Color&" >"&Round(VISA_FAIL_PC,3)&"</td><tr>"
+				str_tr9(6) = "<tr><td width=""100px"" >MC_3DS</td><td onclick=""ChGraph('MC',daysBefore)""  width=""70px""  "&MC_Color_all&" >"&MC&"</td><td onclick=""ChGraph('MC',daysBefore)"" width=""70px""  >"&MC_FAIL&"</td><td onclick=""ChGraph('MC',daysBefore)"" width=""70px""  "&MC_Color&" >"&Round(MC_FAIL_PC,3)&"</td><tr>"
+
+				For j = 1 To 6
+							'tblISS_ACQ = tblISS_ACQ&str_tr9(tbl_tr9(j,3))
+							tbl3DS = tbl3DS&str_tr9(tbl_tr9(j,3))
+				Next							
+
+
+				Response.Write tbl3DS
+
+		end if
+
+
+end function
+'----------------------------------------------------------------------------------------------------
+'-------END: Channel Groups Table--------------------------------------------------------------------
+'----------------------------------------------------------------------------------------------------
+
 
 Conn.Close
 set Cmd = Nothing
