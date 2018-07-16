@@ -921,9 +921,35 @@ if ds="GetTag" then
 	Rs.Close
 end if
 
+
 '----------------------------------------------------------------------------------------------------
 '-------START: Channel Groups------------------------------------------------------------------------
 '----------------------------------------------------------------------------------------------------
+
+	dim warnings(20,7)
+
+	if ((ds="ChannelISS") or  (ds="ChannelACQ") or  (ds="ChannelATM")  or  (ds="Channel3DS")) then
+			' Заполнение Warings
+			i = 0
+			sqlstr = "SELECT Channel_Group, ISNULL(Warning_Count,0) Warning_Count, ISNULL(Error_Count,0) Error_Count, ISNULL(Min_Count,0) Min_Count, ISNULL(Limit_Count,0) Limit_Count,  ISNULL(Lowactivity_start,0) Lowactivity_start, ISNULL(Lowactivity_end,0) Lowactivity_end  FROM  Channel_Config"
+			Rs.OPEN sqlstr, CONN
+			if not RS.EOF then
+			do while (not RS.EOF)
+				warnings(i,0)=Rs.Fields("Channel_Group") ' Channel_Group
+				warnings(i,1)=Rs.Fields("Warning_Count")	' Warning_Count
+				warnings(i,2)=Rs.Fields("Error_Count")	' Error_Count
+				warnings(i,3)=Rs.Fields("Min_Count")	' Min_Count
+						warnings(i,4)=Rs.Fields("Limit_Count")	' Limit_Count
+						warnings(i,5)=Rs.Fields("Lowactivity_start")	' Lowactivity_start
+						warnings(i,6)=Rs.Fields("Lowactivity_end")	' Lowactivity_end
+				i = i+1
+				Rs.MoveNext
+			loop
+			end if
+			RS.CLOSE
+
+	end if
+
 if ds="ChannelISS" then
 if prm= "Graph" then
 
@@ -997,9 +1023,19 @@ if prm= "Graph" then
 	elseif (prm2="ACQ_MIR") then
 		RequestParam = " TARGET_CHANNEL='NSPK MIR' "	
 	end if
+
+	DBefore = Request("DBefore")
+	if Request("DBefore")<>"" then
+		DBefore = Request("DBefore")
+	else
+		DBefore = 0
+	end if
 		
 	sqlstr = "SELECT DATEADD(MONTH,-1,[TIME]) [TIME],SUM(OPERATION) OPERATION,SUM(OPERATION_FAIL) OPERATION_FAIL FROM LOG_VO "
-	sqlstr = sqlstr&" WHERE [TIME]>=convert(datetime,floor(convert(float,Getdate()))) and "&RequestParam&" GROUP BY [TIME] order by [TIME]"
+	sqlstr = sqlstr&" WHERE [TIME]>=convert(datetime,floor(convert(float,DATEADD(DAY,"&DBefore&",GETDATE()) ))) "
+	sqlstr = sqlstr&" and [TIME]<convert(datetime,floor(convert(float, DATEADD(DAY,"&DBefore&"+1,GETDATE()) ))) "
+	sqlstr = sqlstr&" and "&RequestParam&" GROUP BY [TIME] order by [TIME]"
+'Response.Write 	sqlstr
 	Rs.Open sqlstr, Conn
 	If not Rs.EOF then
 	do while (not Rs.EOF)
@@ -1043,8 +1079,18 @@ if prm= "Graph" then
 	elseif (prm2="All_H2H_RBS") then
 		RequestParam = " SOURCE_CHANNEL='H2H_BPCRBS' "
 	end if
+
+	DBefore = Request("DBefore")
+	if Request("DBefore")<>"" then
+		DBefore = Request("DBefore")
+	else
+		DBefore = 0
+	end if
 		
-	sqlstr = "SELECT DATEADD(MONTH,-1,[TIME]) [TIME],SUM(OPERATION) OPERATION,SUM(OPERATION_FAIL) OPERATION_FAIL, SOURCE_CHANNEL FROM LOG_VO WHERE [TIME]>=convert(datetime,floor(convert(float,Getdate()))) and "&RequestParam&" GROUP BY [TIME], SOURCE_CHANNEL order by [TIME]"
+	sqlstr = "SELECT DATEADD(MONTH,-1,[TIME]) [TIME],SUM(OPERATION) OPERATION,SUM(OPERATION_FAIL) OPERATION_FAIL, SOURCE_CHANNEL FROM LOG_VO "
+	sqlstr = sqlstr&" WHERE [TIME]>=convert(datetime,floor(convert(float,DATEADD(DAY,"&DBefore&",GETDATE()) ))) "
+	sqlstr = sqlstr&" and [TIME]<convert(datetime,floor(convert(float, DATEADD(DAY,"&DBefore&"+1,GETDATE()) ))) "
+	sqlstr = sqlstr&" and "&RequestParam&" GROUP BY [TIME], SOURCE_CHANNEL  order by [TIME]"
 	Rs.Open sqlstr, Conn
 	If not Rs.EOF then
 	do while (not Rs.EOF)
@@ -1091,8 +1137,18 @@ if prm= "Graph" then
 	elseif (prm2="SOA_AGENT") then
 		RequestParam = " SOURCE_CHANNEL='OUR_POS' and SERVICE='SOA_AGENT' "
 	end if
+
+	DBefore = Request("DBefore")
+	if Request("DBefore")<>"" then
+		DBefore = Request("DBefore")
+	else
+		DBefore = 0
+	end if
 		
-	sqlstr = "SELECT DATEADD(MONTH,-1,[TIME]) [TIME],SUM(OPERATION) OPERATION,SUM(OPERATION_FAIL) OPERATION_FAIL, SOURCE_CHANNEL FROM LOG_VS WHERE [TIME]>=convert(datetime,floor(convert(float,Getdate()))) and "&RequestParam&" GROUP BY [TIME], SOURCE_CHANNEL order by [TIME]"
+	sqlstr = "SELECT DATEADD(MONTH,-1,[TIME]) [TIME],SUM(OPERATION) OPERATION,SUM(OPERATION_FAIL) OPERATION_FAIL, SOURCE_CHANNEL FROM LOG_VS "
+	sqlstr = sqlstr&" WHERE [TIME]>=convert(datetime,floor(convert(float,DATEADD(DAY,"&DBefore&",GETDATE()) ))) "
+	sqlstr = sqlstr&" and [TIME]<convert(datetime,floor(convert(float, DATEADD(DAY,"&DBefore&"+1,GETDATE()) ))) "
+	sqlstr = sqlstr&" and "&RequestParam&" GROUP BY [TIME], SOURCE_CHANNEL  order by [TIME]"
 	Rs.Open sqlstr, Conn
 	If not Rs.EOF then
 	do while (not Rs.EOF)
@@ -1122,29 +1178,6 @@ end if
 '-------END: Channel Groups--------------------------------------------------------------------------
 '----------------------------------------------------------------------------------------------------
 
-dim warnings(20,7)
-
-if ((ds="ChannelISS") or  (ds="ChannelACQ") or  (ds="ChannelATM")  or  (ds="Channel3DS")) then
-		' Заполнение Warings
-		i = 0
-		sqlstr = "SELECT Channel_Group, ISNULL(Warning_Count,0) Warning_Count, ISNULL(Error_Count,0) Error_Count, ISNULL(Min_Count,0) Min_Count, ISNULL(Limit_Count,0) Limit_Count,  ISNULL(Lowactivity_start,0) Lowactivity_start, ISNULL(Lowactivity_end,0) Lowactivity_end  FROM  Channel_Config"
-		Rs.OPEN sqlstr, CONN
-		if not RS.EOF then
-		do while (not RS.EOF)
-			warnings(i,0)=Rs.Fields("Channel_Group") ' Channel_Group
-			warnings(i,1)=Rs.Fields("Warning_Count")	' Warning_Count
-			warnings(i,2)=Rs.Fields("Error_Count")	' Error_Count
-			warnings(i,3)=Rs.Fields("Min_Count")	' Min_Count
-					warnings(i,4)=Rs.Fields("Limit_Count")	' Limit_Count
-					warnings(i,5)=Rs.Fields("Lowactivity_start")	' Lowactivity_start
-					warnings(i,6)=Rs.Fields("Lowactivity_end")	' Lowactivity_end
-			i = i+1
-			Rs.MoveNext
-		loop
-		end if
-		RS.CLOSE
-
-end if
 
 		function checkWarning(paramName, failCount, totalCount, minutes_val)
 			res = "" 'clWarning clError

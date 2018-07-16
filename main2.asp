@@ -367,7 +367,7 @@ do while not Rs.Eof
 		  if (CID(j)=Rs.Fields("TagID")) then y=j end if
 		next
 
-		if (y>0) then
+		if (y>=0) then
 			y=y+0.5
 		end if
 
@@ -379,6 +379,7 @@ do while not Rs.Eof
   LastID=Rs.Fields("TagID")
   Rs.MoveNext
 loop
+
   AllSeries=""
   for i=0 to 5
     if series(i)<>"" then

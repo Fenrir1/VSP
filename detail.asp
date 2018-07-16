@@ -1197,7 +1197,10 @@ if T=7 then
 
 	sqlstr = "SELECT top 1 [TIME] FROM LOG_VO order by [TIME] desc"
 	Rs.OPEN sqlstr, CONN
-	if not Rs.Eof then DT_FILE=Rs.Fields("TIME") end if
+	if not Rs.Eof then 
+		'DT_FILE=DateTimeFormat(Rs.Fields("TIME"), "dd.mm.yyyy") 
+		DT_FILE=AddLeadingZero(datepart("d",Rs.Fields("TIME")))&"."&AddLeadingZero(datepart("m",Rs.Fields("TIME"))-1)&"."&datepart("yyyy",Rs.Fields("TIME"))
+	end if
 	Rs.CLOSE
 	
 	
@@ -1441,7 +1444,10 @@ end if
 if T=8 then
 	sqlstr = "SELECT top 1 [TIME] FROM LOG_VO order by [TIME] desc"
 	Rs.OPEN sqlstr, CONN
-	if not Rs.Eof then DT_FILE=Rs.Fields("TIME") end if
+	if not Rs.Eof then 
+		'DT_FILE=DateTimeFormat(Rs.Fields("TIME"), "dd.mm.yyyy") 
+		DT_FILE=AddLeadingZero(datepart("d",Rs.Fields("TIME")))&"."&AddLeadingZero(datepart("m",Rs.Fields("TIME"))-1)&"."&datepart("yyyy",Rs.Fields("TIME"))
+	end if
 	Rs.CLOSE
 '-------------------------------------------------------------------------------------------------------
 
@@ -1569,7 +1575,10 @@ end if
 if T=9 then
 	sqlstr = "SELECT top 1 [TIME] FROM LOG_VS order by [TIME] desc"
 	Rs.OPEN sqlstr, CONN
-	if not Rs.Eof then DT_FILE=Rs.Fields("TIME") end if
+	if not Rs.Eof then 
+		'DT_FILE=DateTimeFormat(Rs.Fields("TIME"), "dd.mm.yyyy") 
+		DT_FILE=AddLeadingZero(datepart("d",Rs.Fields("TIME")))&"."&AddLeadingZero(datepart("m",Rs.Fields("TIME"))-1)&"."&datepart("yyyy",Rs.Fields("TIME"))
+	end if
 	Rs.CLOSE
 
 '-------------------------------------------------------------------------------------------------------	

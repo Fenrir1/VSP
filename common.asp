@@ -1,4 +1,8 @@
 <%
+function AddLeadingZero(n) 
+    AddLeadingZero = Right("00"&CStr(n),2)
+end function 
+
 function Max(a,b) 
     Max = a 
     If b > a then Max = b 
