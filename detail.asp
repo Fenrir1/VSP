@@ -1199,7 +1199,7 @@ if T=7 then
 	Rs.OPEN sqlstr, CONN
 	if not Rs.Eof then 
 		'DT_FILE=DateTimeFormat(Rs.Fields("TIME"), "dd.mm.yyyy") 
-		DT_FILE=AddLeadingZero(datepart("d",Rs.Fields("TIME")))&"."&AddLeadingZero(datepart("m",Rs.Fields("TIME"))-1)&"."&datepart("yyyy",Rs.Fields("TIME"))
+		DT_FILE=AddLeadingZero(datepart("d",Rs.Fields("TIME")))&"."&AddLeadingZero(datepart("m",Rs.Fields("TIME")))&"."&datepart("yyyy",Rs.Fields("TIME"))
 	end if
 	Rs.CLOSE
 	
@@ -1446,7 +1446,7 @@ if T=8 then
 	Rs.OPEN sqlstr, CONN
 	if not Rs.Eof then 
 		'DT_FILE=DateTimeFormat(Rs.Fields("TIME"), "dd.mm.yyyy") 
-		DT_FILE=AddLeadingZero(datepart("d",Rs.Fields("TIME")))&"."&AddLeadingZero(datepart("m",Rs.Fields("TIME"))-1)&"."&datepart("yyyy",Rs.Fields("TIME"))
+		DT_FILE=AddLeadingZero(datepart("d",Rs.Fields("TIME")))&"."&AddLeadingZero(datepart("m",Rs.Fields("TIME")))&"."&datepart("yyyy",Rs.Fields("TIME"))
 	end if
 	Rs.CLOSE
 '-------------------------------------------------------------------------------------------------------
@@ -1577,7 +1577,7 @@ if T=9 then
 	Rs.OPEN sqlstr, CONN
 	if not Rs.Eof then 
 		'DT_FILE=DateTimeFormat(Rs.Fields("TIME"), "dd.mm.yyyy") 
-		DT_FILE=AddLeadingZero(datepart("d",Rs.Fields("TIME")))&"."&AddLeadingZero(datepart("m",Rs.Fields("TIME"))-1)&"."&datepart("yyyy",Rs.Fields("TIME"))
+		DT_FILE=AddLeadingZero(datepart("d",Rs.Fields("TIME")))&"."&AddLeadingZero(datepart("m",Rs.Fields("TIME")))&"."&datepart("yyyy",Rs.Fields("TIME"))
 	end if
 	Rs.CLOSE
 
