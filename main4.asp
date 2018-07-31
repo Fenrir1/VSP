@@ -98,9 +98,16 @@ function checkWarning(paramName, failCount, totalCount, minutes_val)
 				end if
 
                 if (warnings(j,6)>0) then
-                    if (((minutes_val<warnings(j,5))or(minutes_val>warnings(j,6)))and(totalCount<warnings(j,4))) then
-                        res = clError
-                    end if
+                    
+					if (warnings(j,5)<=warnings(j,6)) then
+						if (((minutes_val<warnings(j,5))or(minutes_val>warnings(j,6)))and(totalCount<warnings(j,4))) then
+							res = clError
+						end If
+					else 
+						if (((minutes_val<warnings(j,5))and(minutes_val>warnings(j,6)))and(totalCount<warnings(j,4))) then
+							res = clError
+						end If
+					end if
                 end if
 
 				checkWarning = res

@@ -975,7 +975,7 @@ if prm= "Graph" then
 		DBefore = 0
 	end if
 		
-	sqlstr = "set dateformat ymd; SELECT DATEADD(MONTH,-1,[TIME]) [TIME],SUM(OPERATION) OPERATION,SUM(OPERATION_FAIL) OPERATION_FAIL, SOURCE_CHANNEL FROM LOG_VO "
+	sqlstr = "set dateformat ymd; SELECT [TIME],SUM(OPERATION) OPERATION,SUM(OPERATION_FAIL) OPERATION_FAIL, SOURCE_CHANNEL FROM LOG_VO "
 	sqlstr = sqlstr&" WHERE [TIME]>=convert(datetime,floor(convert(float,DATEADD(DAY,"&DBefore&",GETDATE()) ))) "
 	sqlstr = sqlstr&" and [TIME]<convert(datetime,floor(convert(float, DATEADD(DAY,"&DBefore&"+1,GETDATE()) ))) "
 	sqlstr = sqlstr&" and "&RequestParam&" GROUP BY [TIME], SOURCE_CHANNEL order by [TIME]"
@@ -987,11 +987,13 @@ if prm= "Graph" then
 		v1 = Rs.Fields("OPERATION_FAIL")
 
 		if (Series<>"") then 
-			Series = Series&",{x: Date.UTC("&DateTimeFormat(Rs.Fields("TIME"), "yyyy, mm, dd, hh, nn")&"), y: "&v&"}"
-			Series_FAIL = Series_FAIL&",{x: Date.UTC("&DateTimeFormat(Rs.Fields("TIME"), "yyyy, mm, dd, hh, nn")&"), y: "&v1&"}"
+			temp_DT=datepart("yyyy",Rs.Fields("TIME"))&", "&(datepart("m",Rs.Fields("TIME"))-1)&", "&datepart("d",Rs.Fields("TIME"))&", "&datepart("h",Rs.Fields("TIME"))&", "&datepart("n",Rs.Fields("TIME"))
+			Series = Series&",{x: Date.UTC("&temp_DT&"), y: "&v&"}"
+			Series_FAIL = Series_FAIL&",{x: Date.UTC("&temp_DT&"), y: "&v1&"}"
 		else
-			Series = Series&"{x: Date.UTC("&DateTimeFormat(Rs.Fields("TIME"), "yyyy, mm, dd, hh, nn")&"), y: "&v&"}"
-			Series_FAIL = Series_FAIL&"{x: Date.UTC("&DateTimeFormat(Rs.Fields("TIME"), "yyyy, mm, dd, hh, nn")&"), y: "&v1&"}"
+			temp_DT=datepart("yyyy",Rs.Fields("TIME"))&", "&(datepart("m",Rs.Fields("TIME"))-1)&", "&datepart("d",Rs.Fields("TIME"))&", "&datepart("h",Rs.Fields("TIME"))&", "&datepart("n",Rs.Fields("TIME"))
+			Series = Series&"{x: Date.UTC("&temp_DT&"), y: "&v&"}"
+			Series_FAIL = Series_FAIL&"{x: Date.UTC("&temp_DT&"), y: "&v1&"}"
 		end if 
 		
 		Rs.MoveNext
@@ -1031,7 +1033,7 @@ if prm= "Graph" then
 		DBefore = 0
 	end if
 		
-	sqlstr = "SELECT DATEADD(MONTH,-1,[TIME]) [TIME],SUM(OPERATION) OPERATION,SUM(OPERATION_FAIL) OPERATION_FAIL FROM LOG_VO "
+	sqlstr = "SELECT [TIME],SUM(OPERATION) OPERATION,SUM(OPERATION_FAIL) OPERATION_FAIL FROM LOG_VO "
 	sqlstr = sqlstr&" WHERE [TIME]>=convert(datetime,floor(convert(float,DATEADD(DAY,"&DBefore&",GETDATE()) ))) "
 	sqlstr = sqlstr&" and [TIME]<convert(datetime,floor(convert(float, DATEADD(DAY,"&DBefore&"+1,GETDATE()) ))) "
 	sqlstr = sqlstr&" and "&RequestParam&" GROUP BY [TIME] order by [TIME]"
@@ -1044,11 +1046,13 @@ if prm= "Graph" then
 		v1 = Rs.Fields("OPERATION_FAIL")
 
 		if (Series<>"") then 
-			Series = Series&",{x: Date.UTC("&DateTimeFormat(Rs.Fields("TIME"), "yyyy, mm, dd, hh, nn")&"), y: "&v&"}"
-			Series_FAIL = Series_FAIL&",{x: Date.UTC("&DateTimeFormat(Rs.Fields("TIME"), "yyyy, mm, dd, hh, nn")&"), y: "&v1&"}"
+			temp_DT=datepart("yyyy",Rs.Fields("TIME"))&", "&(datepart("m",Rs.Fields("TIME"))-1)&", "&datepart("d",Rs.Fields("TIME"))&", "&datepart("h",Rs.Fields("TIME"))&", "&datepart("n",Rs.Fields("TIME"))
+			Series = Series&",{x: Date.UTC("&temp_DT&"), y: "&v&"}"
+			Series_FAIL = Series_FAIL&",{x: Date.UTC("&temp_DT&"), y: "&v1&"}"
 		else
-			Series = Series&"{x: Date.UTC("&DateTimeFormat(Rs.Fields("TIME"), "yyyy, mm, dd, hh, nn")&"), y: "&v&"}"
-			Series_FAIL = Series_FAIL&"{x: Date.UTC("&DateTimeFormat(Rs.Fields("TIME"), "yyyy, mm, dd, hh, nn")&"), y: "&v1&"}"
+			temp_DT=datepart("yyyy",Rs.Fields("TIME"))&", "&(datepart("m",Rs.Fields("TIME"))-1)&", "&datepart("d",Rs.Fields("TIME"))&", "&datepart("h",Rs.Fields("TIME"))&", "&datepart("n",Rs.Fields("TIME"))
+			Series = Series&"{x: Date.UTC("&temp_DT&"), y: "&v&"}"
+			Series_FAIL = Series_FAIL&"{x: Date.UTC("&temp_DT&"), y: "&v1&"}"
 		end if 
 		
 		Rs.MoveNext
@@ -1087,7 +1091,7 @@ if prm= "Graph" then
 		DBefore = 0
 	end if
 		
-	sqlstr = "SELECT DATEADD(MONTH,-1,[TIME]) [TIME],SUM(OPERATION) OPERATION,SUM(OPERATION_FAIL) OPERATION_FAIL, SOURCE_CHANNEL FROM LOG_VO "
+	sqlstr = "SELECT [TIME],SUM(OPERATION) OPERATION,SUM(OPERATION_FAIL) OPERATION_FAIL, SOURCE_CHANNEL FROM LOG_VO "
 	sqlstr = sqlstr&" WHERE [TIME]>=convert(datetime,floor(convert(float,DATEADD(DAY,"&DBefore&",GETDATE()) ))) "
 	sqlstr = sqlstr&" and [TIME]<convert(datetime,floor(convert(float, DATEADD(DAY,"&DBefore&"+1,GETDATE()) ))) "
 	sqlstr = sqlstr&" and "&RequestParam&" GROUP BY [TIME], SOURCE_CHANNEL  order by [TIME]"
@@ -1099,11 +1103,13 @@ if prm= "Graph" then
 		v1 = Rs.Fields("OPERATION_FAIL")
 
 		if (Series<>"") then 
-			Series = Series&",{x: Date.UTC("&DateTimeFormat(Rs.Fields("TIME"), "yyyy, mm, dd, hh, nn")&"), y: "&v&"}"
-			Series_FAIL = Series_FAIL&",{x: Date.UTC("&DateTimeFormat(Rs.Fields("TIME"), "yyyy, mm, dd, hh, nn")&"), y: "&v1&"}"
+			temp_DT=datepart("yyyy",Rs.Fields("TIME"))&", "&(datepart("m",Rs.Fields("TIME"))-1)&", "&datepart("d",Rs.Fields("TIME"))&", "&datepart("h",Rs.Fields("TIME"))&", "&datepart("n",Rs.Fields("TIME"))
+			Series = Series&",{x: Date.UTC("&temp_DT&"), y: "&v&"}"
+			Series_FAIL = Series_FAIL&",{x: Date.UTC("&temp_DT&"), y: "&v1&"}"
 		else
-			Series = Series&"{x: Date.UTC("&DateTimeFormat(Rs.Fields("TIME"), "yyyy, mm, dd, hh, nn")&"), y: "&v&"}"
-			Series_FAIL = Series_FAIL&"{x: Date.UTC("&DateTimeFormat(Rs.Fields("TIME"), "yyyy, mm, dd, hh, nn")&"), y: "&v1&"}"
+			temp_DT=datepart("yyyy",Rs.Fields("TIME"))&", "&(datepart("m",Rs.Fields("TIME"))-1)&", "&datepart("d",Rs.Fields("TIME"))&", "&datepart("h",Rs.Fields("TIME"))&", "&datepart("n",Rs.Fields("TIME"))
+			Series = Series&"{x: Date.UTC("&temp_DT&"), y: "&v&"}"
+			Series_FAIL = Series_FAIL&"{x: Date.UTC("&temp_DT&"), y: "&v1&"}"
 		end if 
 		
 		Rs.MoveNext
@@ -1145,7 +1151,7 @@ if prm= "Graph" then
 		DBefore = 0
 	end if
 		
-	sqlstr = "SELECT DATEADD(MONTH,-1,[TIME]) [TIME],SUM(OPERATION) OPERATION,SUM(OPERATION_FAIL) OPERATION_FAIL, SOURCE_CHANNEL FROM LOG_VS "
+	sqlstr = "SELECT [TIME],SUM(OPERATION) OPERATION,SUM(OPERATION_FAIL) OPERATION_FAIL, SOURCE_CHANNEL FROM LOG_VS "
 	sqlstr = sqlstr&" WHERE [TIME]>=convert(datetime,floor(convert(float,DATEADD(DAY,"&DBefore&",GETDATE()) ))) "
 	sqlstr = sqlstr&" and [TIME]<convert(datetime,floor(convert(float, DATEADD(DAY,"&DBefore&"+1,GETDATE()) ))) "
 	sqlstr = sqlstr&" and "&RequestParam&" GROUP BY [TIME], SOURCE_CHANNEL  order by [TIME]"
@@ -1157,11 +1163,13 @@ if prm= "Graph" then
 		v1 = Rs.Fields("OPERATION_FAIL")
 
 		if (Series<>"") then 
-			Series = Series&",{x: Date.UTC("&DateTimeFormat(Rs.Fields("TIME"), "yyyy, mm, dd, hh, nn")&"), y: "&v&"}"
-			Series_FAIL = Series_FAIL&",{x: Date.UTC("&DateTimeFormat(Rs.Fields("TIME"), "yyyy, mm, dd, hh, nn")&"), y: "&v1&"}"
+			temp_DT=datepart("yyyy",Rs.Fields("TIME"))&", "&(datepart("m",Rs.Fields("TIME"))-1)&", "&datepart("d",Rs.Fields("TIME"))&", "&datepart("h",Rs.Fields("TIME"))&", "&datepart("n",Rs.Fields("TIME"))
+			Series = Series&",{x: Date.UTC("&temp_DT&"), y: "&v&"}"
+			Series_FAIL = Series_FAIL&",{x: Date.UTC("&temp_DT&"), y: "&v1&"}"
 		else
-			Series = Series&"{x: Date.UTC("&DateTimeFormat(Rs.Fields("TIME"), "yyyy, mm, dd, hh, nn")&"), y: "&v&"}"
-			Series_FAIL = Series_FAIL&"{x: Date.UTC("&DateTimeFormat(Rs.Fields("TIME"), "yyyy, mm, dd, hh, nn")&"), y: "&v1&"}"
+			temp_DT=datepart("yyyy",Rs.Fields("TIME"))&", "&(datepart("m",Rs.Fields("TIME"))-1)&", "&datepart("d",Rs.Fields("TIME"))&", "&datepart("h",Rs.Fields("TIME"))&", "&datepart("n",Rs.Fields("TIME"))
+			Series = Series&"{x: Date.UTC("&temp_DT&"), y: "&v&"}"
+			Series_FAIL = Series_FAIL&"{x: Date.UTC("&temp_DT&"), y: "&v1&"}"
 		end if 
 		
 		Rs.MoveNext

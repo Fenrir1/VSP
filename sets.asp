@@ -341,10 +341,9 @@ function SaveChannelGroup() {
 	if ((/(\d\d:\d\d)/.test($("#cg_lowactivity_start").val())) && (/(\d\d:\d\d)/.test($("#cg_lowactivity_end").val()))) {
 	    var p6 = TimeToMinutes($("#cg_lowactivity_start").val());
 	    var p7 = TimeToMinutes($("#cg_lowactivity_end").val());
-
-	    if (((p6 != 0) || (p7 != 0)) && (p6 > p7)) {
+	   /* if (((p6 != 0) || (p7 != 0)) && (p6 > p7)) {
 	        alert('Границы интервала низкой активности не корректны.');
-	    } else {
+	    } else {*/
 	        jQuery.get('dataset.asp', {
 	            ds: 'SaveChannelGroup', cg_group: p1, cg_warning: p2, cg_error: p3, cg_minimal: p4,
 	            cg_limit: p5, cg_lowactivity_start: p6, cg_lowactivity_end: p7
@@ -353,7 +352,7 @@ function SaveChannelGroup() {
 	            ChangeVoc(5);
 	            alert('Изменения внесены');
 	        });
-	    }
+	   /* }*/
 	} else {
 	    alert('Не коректный формат границы интервала низкой активности.');
 	}
