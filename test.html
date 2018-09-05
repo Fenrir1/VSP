@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <script>
+
+            function draw() {
+
+                //---Create Pattern---------------------------------
+                var canvasPattern = document.createElement("canvas");
+                canvasPattern.width = 12;
+                canvasPattern.height = 16;
+                var contextPattern = canvasPattern.getContext("2d");
+                contextPattern.fillStyle = '#33FF66';
+                contextPattern.fillRect(0, 0, 14, 16);    
+                contextPattern.fillStyle = "#000"; //c2c2c2
+                for(_i=0;_i<9;_i+=4){
+                    for(_j=1, _k=0;_j<=13;_j+=4, _k++){
+                        contextPattern.fillRect(_i+(_k%2)*2,_j,2,2);
+                }}
+                //---Create Pattern---------------------------------
+                
+
+                var c = document.getElementById("myCanvas");
+                var ctx = c.getContext("2d");
+
+                var pattern = ctx.createPattern(canvasPattern,"repeat");
+
+                ctx.fillStyle = pattern;
+                ctx.fillRect(0, 0, 400, 400);
+                
+            }
+
+        </script>       
+    </head>
+<body>
+
+    <button onclick="draw()">Draw</button>
+<!--
+<canvas id="patCanvas" width="13" height="16" style="border:1px solid #d3d3d3;">
+</canvas>
+<br>-->
+
+<canvas id="myCanvas" width="400" height="150" >
+    </canvas>
+
+
+
+
+</body>
+</html>

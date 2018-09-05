@@ -624,8 +624,8 @@ Rs.Close
 					},
 					colors: ['#66FFFF', '#FFFF66'], //'#FF66FF'
 					credits: {enabled: false},
-					legend:  {enabled: false},
-					tooltip: {enabled: false},
+				/*	legend:  {enabled: false},
+					tooltip: {enabled: false},*/
 					title:   {align: 'right', text: 'Клиентов в очереди'},
 					xAxis: [{
 						max: Date.UTC(<% =CurrentTime %>),
@@ -656,9 +656,16 @@ Rs.Close
 								formatter: function() {
 									return this.y > 0  ? this.y : null; 
 								}
-							},
+							},			
 							enableMouseTracking: false
+						},
+						series: {
+								enableMouseTracking: false,
+								marker: {
+										enabled: true
+								}
 						}
+
 					},
 					legend: {
 						enabled : false,
@@ -674,7 +681,7 @@ Rs.Close
 					series: [{
 						name: 'ДПП'
 <%
-Rs.Open "SELECT DT, TagID, [Value] FROM Tags_History WHERE (TagID='5198') AND (DT > GETDATE()-1.0/12) ORDER BY DT", Conn
+Rs.Open "SELECT DT, TagID, [Value] FROM Tags_History WHERE (TagID='5198') AND (DT > dateadd(hour,-2, GETDATE()) ) ORDER BY DT", Conn
 																																			
 if not Rs.Eof then
   temp_DT=datepart("yyyy",Rs.Fields("DT"))&", "&(datepart("m",Rs.Fields("DT"))-1)&", "&datepart("d",Rs.Fields("DT"))&", "&datepart("h",Rs.Fields("DT"))&", "&datepart("n",Rs.Fields("DT"))
@@ -691,8 +698,8 @@ else
 	twoHoursBefore = DateAdd("h",-2,Now)
 	temp_DT=datepart("yyyy",twoHoursBefore)&", "&(datepart("m",twoHoursBefore)-1)&", "&datepart("d",twoHoursBefore)&", "&datepart("h",twoHoursBefore)&", "&datepart("n",twoHoursBefore)
 	DPPSeries = ", type: 'scatter', data: [ "
-	DPPSeries = DPPSeries & " {color: null, marker: {fillColor: '#FF0000', lineColor: '#FF0000', radius: 2}, "
- 	DPPSeries = DPPSeries & " x: Date.UTC("&temp_DT&"), y: -1 } ] "
+	DPPSeries = DPPSeries & " {color: null, marker: { enabled: false }, "
+ 	DPPSeries = DPPSeries & " x: Date.UTC("&temp_DT&"), y: 1 } ] "
 	Response.Write DPPSeries
 end if
 Rs.Close
@@ -700,7 +707,7 @@ Rs.Close
 					}, {
 						name: 'ТСП'
 <%
-Rs.Open "SELECT DT, TagID, [Value] FROM Tags_History WHERE (TagID='5349') AND (DT > GETDATE()-1.0/12) ORDER BY DT", Conn
+Rs.Open "SELECT DT, TagID, [Value] FROM Tags_History WHERE (TagID='5349') AND (DT >  dateadd(hour,-2, GETDATE()) ) ORDER BY DT", Conn
 if not Rs.Eof then
   temp_DT=datepart("yyyy",Rs.Fields("DT"))&", "&(datepart("m",Rs.Fields("DT"))-1)&", "&datepart("d",Rs.Fields("DT"))&", "&datepart("h",Rs.Fields("DT"))&", "&datepart("n",Rs.Fields("DT"))
   Response.Write(", data: [")
@@ -717,8 +724,8 @@ else
 	twoHoursBefore = DateAdd("h",-2,Now)
 	temp_DT=datepart("yyyy",twoHoursBefore)&", "&(datepart("m",twoHoursBefore)-1)&", "&datepart("d",twoHoursBefore)&", "&datepart("h",twoHoursBefore)&", "&datepart("n",twoHoursBefore)
 	TSPSeries = ", type: 'scatter', data: [ "
-	TSPSeries = TSPSeries & " {color: null, marker: {fillColor: '#FF0000', lineColor: '#FF0000', radius: 2}, "
- 	TSPSeries = TSPSeries & " x: Date.UTC("&temp_DT&"), y: -1 } ] "
+	TSPSeries = TSPSeries & " {color: null, marker: { enabled: false }, "
+ 	TSPSeries = TSPSeries & " x: Date.UTC("&temp_DT&"), y: 1 } ] "
 	Response.Write TSPSeries
 end if
 Rs.Close

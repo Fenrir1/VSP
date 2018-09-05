@@ -295,7 +295,7 @@ if ds="ChannelHistory" then
 	    end if
 	    Response.Write(series(i)&"~")
 	  else
-		Response.Write("{x: Date.UTC("&DateTimeFormat(Int(Now+prm2), "yyyy, mm, dd")&"), y: "&v&"}")
+		Response.Write("{x: Date.UTC("&DateTimeFormat(Int(Now+prm2), "yyyy, mm, dd")&"), y: "&v&"}~")
 	  end if
 	next
 	
@@ -1134,6 +1134,8 @@ if prm= "Graph" then
 		RequestParam = " SOURCE_CHANNEL='NSPK_VISA' and SERVICE='3D-Secure'  "
 	elseif (prm2="NSPK_MC") then
 		RequestParam = " SOURCE_CHANNEL='NSPK_MasterCard' and SERVICE='3D-Secure'  "
+	elseif (prm2="NSPK_MIR") then
+		RequestParam = " SOURCE_CHANNEL='NSPK_MIR' and SERVICE='3D-Secure'  "
 	elseif (prm2="VISA") then
 		RequestParam = " SOURCE_CHANNEL='VISA' and SERVICE='3D-Secure' "
 	elseif (prm2="MC") then
@@ -1826,6 +1828,7 @@ function UpdateChannelGroupsTable(ChName,DOfset)
 '------------T=9----------------------------------------------------------------------------------------
 				NSPK_VISA = 0
 				NSPK_MC = 0
+				NSPK_MIR = 0
 				VISA = 0
 				MC = 0
 				SOA_USB = 0
@@ -1833,6 +1836,7 @@ function UpdateChannelGroupsTable(ChName,DOfset)
 				
 				NSPK_VISA_FAIL = 0
 				NSPK_MC_FAIL = 0
+				NSPK_MIR_FAIL = 0
 				VISA_FAIL = 0
 				MC_FAIL = 0
 				SOA_USB_FAIL = 0
@@ -1840,6 +1844,7 @@ function UpdateChannelGroupsTable(ChName,DOfset)
 				
 				NSPK_VISA_FAIL_PC = 0
 				NSPK_MC_FAIL_PC = 0
+				NSPK_MIR_FAIL_PC = 0
 				VISA_FAIL_PC = 0
 				MC_FAIL_PC = 0
 				SOA_USB_FAIL_PC = 0
@@ -1847,6 +1852,7 @@ function UpdateChannelGroupsTable(ChName,DOfset)
 				
 				VISA_Color = ""
 				NSPK_VISA_Color = ""
+				NSPK_MIR_Color = ""
 				MC_Color = ""
 				NSPK_MC_Color = ""
 				SOA_AGENT_Color = ""
@@ -1854,6 +1860,7 @@ function UpdateChannelGroupsTable(ChName,DOfset)
 
 					VISA_Color_all = ""
 				NSPK_VISA_Color_all = ""
+				NSPK_MIR_Color_all = ""
 				MC_Color_all = ""
 				NSPK_MC_Color_all = ""
 				SOA_AGENT_Color_all = ""
@@ -1864,7 +1871,7 @@ function UpdateChannelGroupsTable(ChName,DOfset)
 				'sqlstr = sqlstr&" WHERE [TIME]=(select top 1 [TIME] from LOG_VS order by [TIME] desc) "
 				sqlstr = sqlstr&" WHERE [TIME]>=convert(datetime,floor(convert(float,DATEADD(DAY,"&DBefore&",GETDATE()) ))) "
 				sqlstr = sqlstr&" and [TIME]<convert(datetime,floor(convert(float, DATEADD(DAY,"&DBefore&"+1,GETDATE()) ))) "
-				sqlstr = sqlstr&" and ((SERVICE='3D-Secure' and SOURCE_CHANNEL in ('NSPK_VISA','NSPK_MasterCard','VISA','MasterCard')) or SERVICE='SOA_AGENT' or SERVICE='SOA_USB') "
+				sqlstr = sqlstr&" and ((SERVICE='3D-Secure' and SOURCE_CHANNEL in ('NSPK_VISA','NSPK_MasterCard','VISA','MasterCard','NSPK_MIR')) or SERVICE='SOA_AGENT' or SERVICE='SOA_USB') "
 				sqlstr = sqlstr&" GROUP BY [TIME],SOURCE_CHANNEL"
 				RS.OPEN sqlstr, CONN
 				IF NOT RS.EOF THEN
@@ -1884,6 +1891,14 @@ function UpdateChannelGroupsTable(ChName,DOfset)
 						NSPK_MC_FAIL = Rs.Fields("OPERATION_FAIL")
 						if (NSPK_MC>0) then
 							NSPK_MC_FAIL_PC=(NSPK_MC_FAIL*100)/NSPK_MC
+						end if
+					elseif (Rs.Fields("SOURCE_CHANNEL")="NSPK_MIR") then
+						NSPK_MIR = Rs.Fields("OPERATION")
+						NSPK_MIR_Color = checkWarning("NSPK_MIR_3DS", Rs.Fields("OPERATION_FAIL"), Rs.Fields("OPERATION"), Rs.Fields("timeinminutes"))
+									NSPK_MIR_Color_all = checkWarning_all("NSPK_MIR_3DS", Rs.Fields("OPERATION_FAIL"), Rs.Fields("OPERATION"), Rs.Fields("timeinminutes"))
+						NSPK_MIR_FAIL = Rs.Fields("OPERATION_FAIL")
+						if (NSPK_MIR>0) then
+							NSPK_MIR_FAIL_PC=(NSPK_MIR_FAIL*100)/NSPK_MIR
 						end if
 					elseif (Rs.Fields("SOURCE_CHANNEL")="VISA") then
 						VISA = Rs.Fields("OPERATION")
@@ -1952,6 +1967,13 @@ function UpdateChannelGroupsTable(ChName,DOfset)
 						NSPK_MC_Color = " style=""background: "&NSPK_MC_Color&" "" "
 					end if
 				end if
+				if (NSPK_MIR_Color<>"") then 
+					if (NSPK_MIR_Color = clWarning) then 
+						NSPK_MIR_Color = " style=""color: #000000; background: "&NSPK_MIR_Color&" "" "
+					else
+						NSPK_MIR_Color = " style=""background: "&NSPK_MIR_Color&" "" "
+					end if
+				end if
 				if (SOA_AGENT_Color<>"") then 
 					if (SOA_AGENT_Color = clWarning) then
 						SOA_AGENT_Color = " style=""color: #000000; background: "&SOA_AGENT_Color&" "" "
@@ -1995,6 +2017,13 @@ function UpdateChannelGroupsTable(ChName,DOfset)
 						NSPK_MC_Color_all = " style=""background: "&NSPK_MC_Color_all&" "" "
 					end if
 				end if
+				if (NSPK_MIR_Color_all<>"") then 
+					if (NSPK_MIR_Color_all = clWarning) then 
+						NSPK_MIR_Color_all = " style=""color: #000000; background: "&NSPK_MIR_Color_all&" "" "
+					else
+						NSPK_MIR_Color_all = " style=""background: "&NSPK_MIR_Color_all&" "" "
+					end if
+				end if
 				if (SOA_AGENT_Color_all<>"") then 
 					if (SOA_AGENT_Color_all = clWarning) then
 						SOA_AGENT_Color_all = " style=""color: #000000; background: "&SOA_AGENT_Color_all&" "" "
@@ -2019,8 +2048,8 @@ function UpdateChannelGroupsTable(ChName,DOfset)
 			'5-ая строка – группа каналов VISA (переименовать в VISA_3DS)
 			'4-ая строка – группа каналов MC (переименовать в MC _3DS)
 
-					Dim tbl_tr9(6,3)
-					Dim str_tr9(6)
+					Dim tbl_tr9(7,3)
+					Dim str_tr9(7)
 
 					tbl_tr9(1, 1)=SOA_USB_FAIL_PC
 					tbl_tr9(1, 2)="SOA_USB"
@@ -2046,9 +2075,13 @@ function UpdateChannelGroupsTable(ChName,DOfset)
 					tbl_tr9(6, 2)="MC"
 					tbl_tr9(6, 3)=6
 
+					tbl_tr9(7, 1)=NSPK_MIR_FAIL_PC
+					tbl_tr9(7, 2)="NSPK_MIR"
+					tbl_tr9(7, 3)=7
 
-					For j = 1 To 6-1
-							For k = j + 1 To 6
+
+					For j = 1 To 7-1
+							For k = j + 1 To 7
 									If (tbl_tr9(j,1) < tbl_tr9(k,1)) or ((tbl_tr9(k,1)=0) and (tbl_tr9(j,1)=0) and (tbl_tr9(j,3) > tbl_tr9(k,3)) ) Then
 											For l = 1 To 3
 													Temp = tbl_tr9(j,l)
@@ -2066,8 +2099,9 @@ function UpdateChannelGroupsTable(ChName,DOfset)
 				str_tr9(4) = "<tr><td width=""100px"" >NSPK_MC_3DS</td><td onclick=""ChGraph('NSPK_MC',daysBefore)""  width=""70px""  "&NSPK_MC_Color_all&" >"&NSPK_MC&"</td><td onclick=""ChGraph('NSPK_MC',daysBefore)"" width=""70px""  >"&NSPK_MC_FAIL&"</td><td onclick=""ChGraph('NSPK_MC',daysBefore)"" width=""70px""  "&NSPK_MC_Color&" >"&Round(NSPK_MC_FAIL_PC,3)&"</td><tr>"
 				str_tr9(5) = "<tr><td width=""100px"" >VISA_3DS</td><td onclick=""ChGraph('VISA',daysBefore)""  width=""70px""  "&VISA_Color_all&" >"&VISA&"</td><td onclick=""ChGraph('VISA',daysBefore)"" width=""70px""  >"&VISA_FAIL&"</td><td onclick=""ChGraph('VISA',daysBefore)""  width=""70px"" "&VISA_Color&" >"&Round(VISA_FAIL_PC,3)&"</td><tr>"
 				str_tr9(6) = "<tr><td width=""100px"" >MC_3DS</td><td onclick=""ChGraph('MC',daysBefore)""  width=""70px""  "&MC_Color_all&" >"&MC&"</td><td onclick=""ChGraph('MC',daysBefore)"" width=""70px""  >"&MC_FAIL&"</td><td onclick=""ChGraph('MC',daysBefore)"" width=""70px""  "&MC_Color&" >"&Round(MC_FAIL_PC,3)&"</td><tr>"
+				str_tr9(7) = "<tr><td width=""100px"" >NSPK_MIR</td><td onclick=""ChGraph('NSPK_MIR',daysBefore)""  width=""70px""  "&NSPK_MIR_Color_all&" >"&NSPK_MIR&"</td><td onclick=""ChGraph('NSPK_MIR',daysBefore)"" width=""70px""  >"&NSPK_MIR_FAIL&"</td><td onclick=""ChGraph('NSPK_MIR',daysBefore)"" width=""70px""  "&NSPK_MIR_Color&" >"&Round(NSPK_MIR_FAIL_PC,3)&"</td><tr>"
 
-				For j = 1 To 6
+				For j = 1 To 7
 							'tblISS_ACQ = tblISS_ACQ&str_tr9(tbl_tr9(j,3))
 							tbl3DS = tbl3DS&str_tr9(tbl_tr9(j,3))
 				Next							

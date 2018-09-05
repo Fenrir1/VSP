@@ -295,12 +295,14 @@ end function
  NSPK_VISA_3DS = ""
  MC_3DS = ""
  NSPK_MC_3DS = ""
+ NSPK_MIR_3DS = ""
+
  SOA_AGENT = ""
  SOA_USB = ""
  
  	sqlstr = "SELECT DATEADD(MONTH,-1,[TIME]) [TIME],SUM(OPERATION) OPERATION,SUM(OPERATION_FAIL) OPERATION_FAIL, SOURCE_CHANNEL "
     sqlstr = sqlstr&" ,DATEPART(HOUR,[TIME])*60+DATEPART(MINUTE,[TIME]) timeinminutes FROM LOG_VS WHERE "
-	sqlstr = sqlstr&" ((SERVICE='3D-Secure' and SOURCE_CHANNEL in ('NSPK_VISA','NSPK_MasterCard','VISA','MasterCard')) or SERVICE='SOA_AGENT' or SERVICE='SOA_USB') and "
+	sqlstr = sqlstr&" ((SERVICE='3D-Secure' and SOURCE_CHANNEL in ('NSPK_VISA','NSPK_MasterCard','VISA','MasterCard','NSPK_MIR')) or SERVICE='SOA_AGENT' or SERVICE='SOA_USB') and "
 	sqlstr = sqlstr&" [TIME]>=convert(datetime,floor(convert(float,Getdate()))) GROUP BY [TIME], SOURCE_CHANNEL order by [TIME]"
 	Rs.Open sqlstr, Conn
 	If not Rs.EOF then
@@ -313,6 +315,8 @@ end function
 			VISA_3DS = checkWarning("VISA_3DS", Rs.Fields("OPERATION_FAIL"), Rs.Fields("OPERATION"),  Rs.Fields("timeinminutes"))
 		elseif (Rs.Fields("SOURCE_CHANNEL")="MasterCard") then
 			MC_3DS = checkWarning("MC_3DS", Rs.Fields("OPERATION_FAIL"), Rs.Fields("OPERATION"),  Rs.Fields("timeinminutes"))
+		elseif (Rs.Fields("SOURCE_CHANNEL")="NSPK_MIR") then
+			NSPK_MIR_3DS = checkWarning("NSPK_MIR_3DS", Rs.Fields("OPERATION_FAIL"), Rs.Fields("OPERATION"),  Rs.Fields("timeinminutes"))
 		elseif (Rs.Fields("SOURCE_CHANNEL")="RBS") then
 			SOA_USB = checkWarning("SOA_USB", Rs.Fields("OPERATION_FAIL"), Rs.Fields("OPERATION"),  Rs.Fields("timeinminutes"))
 		elseif (Rs.Fields("SOURCE_CHANNEL")="OUR_POS") then
@@ -328,7 +332,7 @@ end function
  	sqlstr = "SELECT DATEADD(MONTH,-1,[TIME]) [TIME],SUM(OPERATION) OPERATION, SERVICE "
     sqlstr = sqlstr&" ,DATEPART(HOUR,[TIME])*60+DATEPART(MINUTE,[TIME]) timeinminutes FROM LOG_VS "
 	sqlstr = sqlstr&" WHERE [TIME]=(select top 1 [TIME] from LOG_VS order by [TIME] desc) "
-	sqlstr = sqlstr&" and ((SERVICE='3D-Secure' and SOURCE_CHANNEL in ('NSPK_VISA','NSPK_MasterCard','VISA','MasterCard')) or SERVICE='SOA_AGENT' or SERVICE='SOA_USB') "
+	sqlstr = sqlstr&" and ((SERVICE='3D-Secure' and SOURCE_CHANNEL in ('NSPK_VISA','NSPK_MasterCard','VISA','MasterCard','NSPK_MIR')) or SERVICE='SOA_AGENT' or SERVICE='SOA_USB') "
 	sqlstr = sqlstr&" GROUP BY [TIME],SERVICE"
 	Rs.OPEN sqlstr, CONN
 	If not Rs.EOF then
@@ -347,11 +351,11 @@ end function
 	RS.CLOSE	
 	
 	
-	if ((VISA_3DS = clWarning)or(NSPK_VISA_3DS = clWarning)or(MC_3DS = clWarning)or(NSPK_MC_3DS = clWarning)) then
+	if ((VISA_3DS = clWarning)or(NSPK_VISA_3DS = clWarning)or(MC_3DS = clWarning)or(NSPK_MC_3DS = clWarning)or(NSPK_MIR_3DS = clWarning)) then
 		All_3DS_Color = clWarning
 	end if
 	
-	if ((VISA_3DS = clError)or(NSPK_VISA_3DS = clError)or(MC_3DS = clError)or(NSPK_MC_3DS = clError)) then
+	if ((VISA_3DS = clError)or(NSPK_VISA_3DS = clError)or(MC_3DS = clError)or(NSPK_MC_3DS = clError)or(NSPK_MIR_3DS = clError)) then
 		All_3DS_Color = clError
 	end if 
 	
@@ -924,7 +928,7 @@ CurrentTimeLabel = DateTimeFormat(DateAdd("m", -1, cDate(LastFileTimeFull)), "hh
 		<meta http-equiv="Content-Type" content="text/html; charset=windows-1251">
                 <meta http-equiv="X-UA-Compatible" content="ie=edge">
 
-               <meta http-equiv='refresh' content='60; url=http://ufa-qos01ow/vsp/main4.asp'>
+             <!--  <meta http-equiv='refresh' content='60; url=http://ufa-qos01ow/vsp/main4.asp'>-->
 
 		<!-- 1. Add these JavaScript inclusions in the head of your page -->
 		<script type="text/javascript" src="js/jquery.min.js"></script>

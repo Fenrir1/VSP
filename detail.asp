@@ -1089,6 +1089,7 @@ end function
 '------------T=9----------------------------------------------------------------------------------------
 	NSPK_VISA = 0
 	NSPK_MC = 0
+	NSPK_MIR = 0
 	VISA = 0
 	MC = 0
 	SOA_USB = 0
@@ -1096,6 +1097,7 @@ end function
 	
 	NSPK_VISA_FAIL = 0
 	NSPK_MC_FAIL = 0
+	NSPK_MIR_FAIL = 0
 	VISA_FAIL = 0
 	MC_FAIL = 0
 	SOA_USB_FAIL = 0
@@ -1103,6 +1105,7 @@ end function
 	
 	NSPK_VISA_FAIL_PC = 0
 	NSPK_MC_FAIL_PC = 0
+	NSPK_MIR_FAIL_PC = 0
 	VISA_FAIL_PC = 0
 	MC_FAIL_PC = 0
 	SOA_USB_FAIL_PC = 0
@@ -1110,6 +1113,7 @@ end function
 	
 	 VISA_Color = ""
 	 NSPK_VISA_Color = ""
+	 NSPK_MIR_Color = ""
 	 MC_Color = ""
 	 NSPK_MC_Color = ""
 	 SOA_AGENT_Color = ""
@@ -1119,13 +1123,14 @@ end function
 	 NSPK_VISA_Color_all = ""
 	 MC_Color_all = ""
 	 NSPK_MC_Color_all = ""
+	 NSPK_MIR_Color_all = ""
 	 SOA_AGENT_Color_all = ""
 	 SOA_USB_Color_all = ""
 
 	sqlstr = "SELECT DATEADD(MONTH,-1,[TIME]) [TIME],SUM(OPERATION) OPERATION, SUM(OPERATION_FAIL) OPERATION_FAIL, SOURCE_CHANNEL "
     sqlstr = sqlstr&" ,DATEPART(HOUR,[TIME])*60+DATEPART(MINUTE,[TIME]) timeinminutes FROM LOG_VS "
 	sqlstr = sqlstr&" WHERE [TIME]=(select top 1 [TIME] from LOG_VS order by [TIME] desc) "
-	sqlstr = sqlstr&" and ((SERVICE='3D-Secure' and SOURCE_CHANNEL in ('NSPK_VISA','NSPK_MasterCard','VISA','MasterCard')) or SERVICE='SOA_AGENT' or SERVICE='SOA_USB') "
+	sqlstr = sqlstr&" and ((SERVICE='3D-Secure' and SOURCE_CHANNEL in ('NSPK_VISA','NSPK_MasterCard','VISA','MasterCard','NSPK_MIR')) or SERVICE='SOA_AGENT' or SERVICE='SOA_USB') "
 	sqlstr = sqlstr&" GROUP BY [TIME],SOURCE_CHANNEL"
 	RS.OPEN sqlstr, CONN
 	IF NOT RS.EOF THEN
@@ -1145,6 +1150,14 @@ end function
 			NSPK_MC_FAIL = Rs.Fields("OPERATION_FAIL")
 			if (NSPK_MC>0) then
 				NSPK_MC_FAIL_PC=(NSPK_MC_FAIL*100)/NSPK_MC
+			end if
+		elseif (Rs.Fields("SOURCE_CHANNEL")="NSPK_MIR") then
+			NSPK_MIR = Rs.Fields("OPERATION")
+			NSPK_MIR_Color = checkWarning("NSPK_MIR_3DS", Rs.Fields("OPERATION_FAIL"), Rs.Fields("OPERATION"), Rs.Fields("timeinminutes"))
+            NSPK_MIR_Color_all = checkWarning_all("NSPK_MIR_3DS", Rs.Fields("OPERATION_FAIL"), Rs.Fields("OPERATION"), Rs.Fields("timeinminutes"))
+			NSPK_MIR_FAIL = Rs.Fields("OPERATION_FAIL")
+			if (NSPK_MIR>0) then
+				NSPK_MIR_FAIL_PC=(NSPK_MIR_FAIL*100)/NSPK_MIR
 			end if
 		elseif (Rs.Fields("SOURCE_CHANNEL")="VISA") then
 			VISA = Rs.Fields("OPERATION")
@@ -1189,12 +1202,14 @@ end function
 	circleIndicatorColor3 = clNormal
 	
 	if ((NSPK_VISA_Color = clWarning)or(NSPK_MC_Color = clWarning)or(VISA_Color = clWarning)or(MC_Color = clWarning)or(SOA_USB_Color = clWarning)or(SOA_AGENT_Color = clWarning)or _
-    (NSPK_VISA_Color_all = clWarning)or(NSPK_MC_Color_all = clWarning)or(VISA_Color_all = clWarning)or(MC_Color_all = clWarning)or(SOA_USB_Color_all = clWarning)or(SOA_AGENT_Color_all = clWarning)) then
+    (NSPK_VISA_Color_all = clWarning)or(NSPK_MC_Color_all = clWarning)or(VISA_Color_all = clWarning)or(NSPK_MIR_Color_all = clWarning)or _
+	(MC_Color_all = clWarning)or(SOA_USB_Color_all = clWarning)or(SOA_AGENT_Color_all = clWarning)) then
 		circleIndicatorColor3 = clWarning
 	end if
 	
 	if ((NSPK_VISA_Color = clError)or(NSPK_MC_Color = clError)or(VISA_Color = clError)or(MC_Color = clError)or(SOA_USB_Color = clError)or(SOA_AGENT_Color = clError)or _
-    (NSPK_VISA_Color_all = clError)or(NSPK_MC_Color_all = clError)or(VISA_Color_all = clError)or(MC_Color_all = clError)or(SOA_USB_Color_all = clError)or(SOA_AGENT_Color_all = clError)) then
+    (NSPK_VISA_Color_all = clError)or(NSPK_MC_Color_all = clError)or(VISA_Color_all = clError)or(NSPK_MIR_Color_all = clError)or _
+	(MC_Color_all = clError)or(SOA_USB_Color_all = clError)or(SOA_AGENT_Color_all = clError)) then
 		circleIndicatorColor3 = clError
 	end if
 	
@@ -1606,6 +1621,13 @@ if T=9 then
 			NSPK_VISA_Color = " style=""background: "&NSPK_VISA_Color&" "" "
 		end if
 	end if 
+	if (NSPK_MIR_Color<>"") then 
+		if (NSPK_MIR_Color = clWarning) then 
+			NSPK_MIR_Color = " style=""color: #000000; background: "&NSPK_MIR_Color&" "" "
+		else
+			NSPK_MIR_Color = " style=""background: "&NSPK_MIR_Color&" "" "
+		end if
+	end if 
 	if (MC_Color<>"") then 
 		if (MC_Color = clWarning) then 
 			MC_Color = " style=""color: #000000; background: "&MC_Color&" "" "
@@ -1649,6 +1671,13 @@ if T=9 then
 			NSPK_VISA_Color_all = " style=""background: "&NSPK_VISA_Color_all&" "" "
 		end if
 	end if 
+	if (NSPK_MIR_Color_all<>"") then 
+		if (NSPK_MIR_Color_all = clWarning) then 
+			NSPK_MIR_Color_all = " style=""color: #000000; background: "&NSPK_MIR_Color_all&" "" "
+		else
+			NSPK_MIR_Color_all = " style=""background: "&NSPK_MIR_Color_all&" "" "
+		end if
+	end if 
 	if (MC_Color_all<>"") then 
 		if (MC_Color_all = clWarning) then 
 			MC_Color_all = " style=""color: #000000; background: "&MC_Color_all&" "" "
@@ -1687,8 +1716,8 @@ if T=9 then
 '5-а€ строка Ц группа каналов VISA (переименовать в VISA_3DS)
 '4-а€ строка Ц группа каналов MC (переименовать в MC _3DS)
 
-    Dim tbl_tr9(6,3)
-    Dim str_tr9(6)
+    Dim tbl_tr9(7,3)
+    Dim str_tr9(7)
 
     tbl_tr9(1, 1)=SOA_USB_FAIL_PC
     tbl_tr9(1, 2)="SOA_USB"
@@ -1714,9 +1743,13 @@ if T=9 then
     tbl_tr9(6, 2)="MC"
     tbl_tr9(6, 3)=6
 
+	tbl_tr9(7, 1)=NSPK_MIR_FAIL_PC
+    tbl_tr9(7, 2)="NSPK_MIR"
+    tbl_tr9(7, 3)=7
 
-     For j = 1 To 6-1
-         For k = j + 1 To 6
+
+     For j = 1 To 7-1
+         For k = j + 1 To 7
              If (tbl_tr9(j,1) < tbl_tr9(k,1)) or ((tbl_tr9(k,1)=0) and (tbl_tr9(j,1)=0) and (tbl_tr9(j,3) > tbl_tr9(k,3)) ) Then
                 For l = 1 To 3
                     Temp = tbl_tr9(j,l)
@@ -1734,8 +1767,9 @@ if T=9 then
   str_tr9(4) = "<tr><td width=""100px"" >NSPK_MC_3DS</td><td onclick=""ChGraph('NSPK_MC',daysBefore)""  width=""70px""  "&NSPK_MC_Color_all&" >"&NSPK_MC&"</td><td onclick=""ChGraph('NSPK_MC',daysBefore)"" width=""70px""  >"&NSPK_MC_FAIL&"</td><td onclick=""ChGraph('NSPK_MC',daysBefore)"" width=""70px""  "&NSPK_MC_Color&" >"&Round(NSPK_MC_FAIL_PC,3)&"</td><tr>"
   str_tr9(5) = "<tr><td width=""100px"" >VISA_3DS</td><td onclick=""ChGraph('VISA',daysBefore)""  width=""70px""  "&VISA_Color_all&" >"&VISA&"</td><td onclick=""ChGraph('VISA',daysBefore)"" width=""70px""  >"&VISA_FAIL&"</td><td onclick=""ChGraph('VISA',daysBefore)""  width=""70px"" "&VISA_Color&" >"&Round(VISA_FAIL_PC,3)&"</td><tr>"
   str_tr9(6) = "<tr><td width=""100px"" >MC_3DS</td><td onclick=""ChGraph('MC',daysBefore)""  width=""70px""  "&MC_Color_all&" >"&MC&"</td><td onclick=""ChGraph('MC',daysBefore)"" width=""70px""  >"&MC_FAIL&"</td><td onclick=""ChGraph('MC',daysBefore)"" width=""70px""  "&MC_Color&" >"&Round(MC_FAIL_PC,3)&"</td><tr>"
+  str_tr9(7) = "<tr><td width=""100px"" >NSPK_MIR</td><td onclick=""ChGraph('NSPK_MIR',daysBefore)""  width=""70px""  "&NSPK_MIR_Color_all&" >"&NSPK_MIR&"</td><td onclick=""ChGraph('NSPK_MIR',daysBefore)"" width=""70px""  >"&NSPK_MIR_FAIL&"</td><td onclick=""ChGraph('NSPK_MIR',daysBefore)"" width=""70px""  "&NSPK_MIR_Color&" >"&Round(NSPK_MIR_FAIL_PC,3)&"</td><tr>"
 
-   For j = 1 To 6
+   For j = 1 To 7
          'tblISS_ACQ = tblISS_ACQ&str_tr9(tbl_tr9(j,3))
         tbl3DS = tbl3DS&str_tr9(tbl_tr9(j,3))
    Next							
@@ -2311,18 +2345,23 @@ function ChTable(d) {
 	jQuery.get('dataset.asp', { ds: 'ChannelHistory', tag: '~', prm: 'Table', prm2: d }, function(ds) {
 		var part = [];
 		part = ds.split('~');
-		$('#idTable1').html(part[0]);
-		var cat=jQuery.parseJSON(part[1]);
-		options2.yAxis.categories=cat.categories;
+		
+//console.log(options2.series.length)
+		$('#idTable1').html(part[0]); //table		
+		var cat=jQuery.parseJSON(part[1]); //ctegories
+		options2.yAxis.categories=cat.categories; 
 
 		var obj0 = eval("[" + part[2] + "]");
 		var obj1 = eval("[" + part[3] + "]");
 		options2.series[0].data = obj0;	
 		options2.series[1].data = obj1;
-		for (var i=1; i<9; i++) {
+		for (var i=1; i<options2.series.length-1; i++) { //9
+console.log(i+3,part[i+3]);
 		  options2.series[i+1].data = eval("[" + part[i+3] + "]");
 		}
-
+		
+//console.log(options2.series)
+		options2.chart.renderTo='containerH';
 		//var opt2={chart: {renderTo: 'containerH'},series: [{name: 'Tokyo', data: [7.0, 9.9]}]};
 		//var jsStr='{"chart": {"renderTo": "containerH"}, "series": [{"name": "Tokyo", "data": [7.0, 9.9]}]}';
 		//var obj2=jQuery.parseJSON(jsStr);

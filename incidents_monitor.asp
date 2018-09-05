@@ -1095,10 +1095,33 @@ function initPlot2(plotId, circleId, statTime, endTime) {
             this.maxHeight = 160;
             this.barHeight = 40;
             this.bars = [];
-            this.plot_colors = [["#33FF66","#33FF99"],["#66FFFF","#99FFFF"]];
+            this.canvasId = canvasId;
+            var canvas = document.getElementById(this.canvasId),
+                    ctx = canvas.getContext("2d");
+            var self = this;
+
+                //---Create Pattern---------------------------------
+                var canvasPattern = document.createElement("canvas");
+                canvasPattern.width = 12;
+                canvasPattern.height = 16;
+                var contextPattern = canvasPattern.getContext("2d");
+                contextPattern.fillStyle = '#33FF66';
+                contextPattern.fillRect(0, 0, 14, 16);    
+                contextPattern.fillStyle = "#818182"; //c2c2c2 818182
+                for(_i=0;_i<9;_i+=4){
+                    for(_j=1, _k=0;_j<=13;_j+=4, _k++){
+                        contextPattern.fillRect(_i+(_k%2)*2,_j,2,2);
+                }}
+                //---Create Pattern---------------------------------
+
+                var pattern = ctx.createPattern(canvasPattern,"repeat");
+
+            //this.plot_colors = [["#33FF66","#33FF99"],["#66FFFF","#99FFFF"]];
+            this.plot_colors = [[pattern,pattern],["#33FF66","#33FF99"]];
+
             this.plot_hover = false;
             this.hover_id = -1;
-            this.canvasId = canvasId;
+            
             this.tableId = tableId;
             this.circleColor = '<%=plot0CircleColor %>';
             this.circleText = 'TIME';
@@ -1124,9 +1147,7 @@ function initPlot2(plotId, circleId, statTime, endTime) {
                 this.recordTimeText = timeConvert(this.recordTimeLength);
             };
 
-            var canvas = document.getElementById(this.canvasId),
-                    ctx = canvas.getContext("2d");
-            var self = this;
+            
 
             this.renderPlot = function() {
         /*
